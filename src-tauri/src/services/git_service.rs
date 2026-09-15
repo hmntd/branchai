@@ -504,25 +504,42 @@ pub fn checkout_branch(repo_path: String, branch_name: String) -> Result<String,
         return Err("Branch name cannot be empty".to_string());
     }
 
+    // Handle remote branch shorthand (e.g., origin/feature-x -> local feature-x)
+    let target_branch_name = if clean_branch.starts_with("origin/") {
+        let local_name = clean_branch.trim_start_matches("origin/").to_string();
+        if repo.find_branch(&local_name, git2::BranchType::Local).is_err() {
+            if let Ok(remote_ref) = repo.find_reference(&format!("refs/remotes/{}", clean_branch)) {
+                if let Ok(target_commit) = remote_ref.peel_to_commit() {
+                    let _ = repo.branch(&local_name, &target_commit, false);
+                }
+            }
+        }
+        local_name
+    } else {
+        clean_branch.to_string()
+    };
+
+    let refname = format!("refs/heads/{}", target_branch_name);
     let target_obj = repo
-        .revparse_single(&format!("refs/heads/{}", clean_branch))
+        .revparse_single(&refname)
         .or_else(|_| repo.revparse_single(clean_branch))
         .map_err(|e| format!("Could not find branch '{}': {}", clean_branch, e.message()))?;
 
     let mut opts = git2::build::CheckoutBuilder::new();
     opts.safe();
+    opts.update_index(true);
     repo.checkout_tree(&target_obj, Some(&mut opts))
         .map_err(|e| format!("Failed to checkout branch tree: {}", e.message()))?;
 
-    if repo.find_branch(clean_branch, git2::BranchType::Local).is_ok() {
-        repo.set_head(&format!("refs/heads/{}", clean_branch))
+    if repo.find_branch(&target_branch_name, git2::BranchType::Local).is_ok() {
+        repo.set_head(&format!("refs/heads/{}", target_branch_name))
             .map_err(|e| e.message().to_string())?;
     } else {
         repo.set_head_detached(target_obj.id())
             .map_err(|e| e.message().to_string())?;
     }
 
-    Ok(format!("Switched to branch '{}'", clean_branch))
+    Ok(format!("Switched to branch '{}'", target_branch_name))
 }
 
 #[tauri::command]
