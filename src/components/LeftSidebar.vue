@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import {
   FolderGit2,
   GitBranch,
@@ -15,6 +15,8 @@ import {
   GitPullRequest,
   AlertCircle,
   Users,
+  FolderPlus,
+  FolderMinus,
 } from '@lucide/vue';
 
 const props = defineProps<{
@@ -22,6 +24,7 @@ const props = defineProps<{
   branches: Array<{ name: string; is_head: boolean; is_remote: boolean }>;
   currentBranch: string;
   activeTab: string;
+  recentRepos?: string[];
 }>();
 
 const emit = defineEmits<{
@@ -29,6 +32,8 @@ const emit = defineEmits<{
   (e: 'selectTab', tab: string): void;
   (e: 'openSettings'): void;
   (e: 'checkoutBranch', branchName: string): void;
+  (e: 'browseRepo'): void;
+  (e: 'closeRepo'): void;
 }>();
 
 const inputPath = ref(props.repoPath);
@@ -40,16 +45,9 @@ const isCloudOpen = ref(false);
 const isPrOpen = ref(false);
 const isAiOpen = ref(true);
 
-const RECENT_REPOS = [
-  '/home/bazavluk/MyProjects/BranchAI',
-  '/home/bazavluk/MyProjects/lms',
-  '/home/bazavluk/MyProjects/game_libraries',
-  '/home/bazavluk/MyProjects/crypto-ai',
-  '/home/bazavluk/MyProjects/pens-assistant',
-  '/home/bazavluk/MyProjects/hmntd',
-  '/home/bazavluk/MyProjects/halosoft',
-  '/home/bazavluk/MyProjects/lamp',
-];
+watch(() => props.repoPath, (newVal) => {
+  inputPath.value = newVal;
+});
 
 function handleRepoSubmit() {
   if (inputPath.value.trim()) {
@@ -70,6 +68,9 @@ function selectRepo(path: string) {
       <div class="repo-header">
         <FolderGit2 :size="13" class="icon-primary" />
         <span class="title">REPOSITORY PATH</span>
+        <button class="icon-action-btn danger" @click="emit('closeRepo')" title="Close active repository">
+          <FolderMinus :size="12" />
+        </button>
       </div>
 
       <div class="repo-input-box">
@@ -79,21 +80,23 @@ function selectRepo(path: string) {
           placeholder="Git repo path..."
           class="repo-input"
         />
-        <button @click="handleRepoSubmit" class="btn btn-secondary btn-xs">Open</button>
+        <button @click="emit('browseRepo')" class="btn btn-secondary btn-xs" title="Browse repository folder natively">
+          <FolderPlus :size="11" /> Browse
+        </button>
       </div>
 
       <!-- Quick Recent Repos Picker -->
-      <div class="recent-repos">
-        <span class="recent-label">PROJECTS:</span>
+      <div class="recent-repos" v-if="recentRepos && recentRepos.length > 0">
+        <span class="recent-label">RECENT PROJECTS:</span>
         <div class="recent-tags">
           <span
-            v-for="r in RECENT_REPOS"
+            v-for="r in recentRepos.slice(0, 6)"
             :key="r"
             class="repo-tag"
             :class="{ active: repoPath === r }"
             @click="selectRepo(r)"
           >
-            {{ r.split('/').pop() }}
+            {{ r.split('/').pop() || r }}
           </span>
         </div>
       </div>
@@ -270,6 +273,27 @@ function selectRepo(path: string) {
   font-weight: 700;
   color: var(--text-muted);
   letter-spacing: 0.5px;
+}
+
+.repo-header .title {
+  flex: 1;
+}
+
+.icon-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  transition: all 0.15s ease;
+}
+
+.icon-action-btn.danger:hover {
+  color: var(--danger);
+  background: rgba(255, 71, 87, 0.2);
 }
 
 .repo-input-box {

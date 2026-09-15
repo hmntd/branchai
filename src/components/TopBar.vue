@@ -17,6 +17,7 @@ import {
   Check,
   AlertCircle,
   RefreshCw,
+  FolderMinus,
 } from '@lucide/vue';
 
 const props = defineProps<{
@@ -35,6 +36,8 @@ const emit = defineEmits<{
   (e: 'refresh'): void;
   (e: 'openSettings'): void;
   (e: 'toggleTerminal'): void;
+  (e: 'closeRepo'): void;
+  (e: 'browseRepo'): void;
 }>();
 
 const showBranchModal = ref(false);
@@ -213,6 +216,14 @@ async function handleCreateBranch() {
         <span class="sep">></span>
         <span class="label">branch</span>
         <span class="value-branch">{{ currentBranch || 'master' }}</span>
+
+        <!-- Close Repository Button -->
+        <div class="has-tooltip">
+          <button class="close-repo-btn" @click="emit('closeRepo')">
+            <FolderMinus :size="12" />
+          </button>
+          <div class="tooltip-box">Close active repository (return to Welcome Screen)</div>
+        </div>
       </div>
 
       <div class="toolbar-actions">
@@ -419,6 +430,24 @@ async function handleCreateBranch() {
 
 .repo-breadcrumb .sep {
   color: var(--text-dim);
+}
+
+.close-repo-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+  transition: all 0.15s ease;
+}
+
+.close-repo-btn:hover {
+  background: rgba(255, 71, 87, 0.2);
+  color: var(--danger);
 }
 
 .toolbar-actions {

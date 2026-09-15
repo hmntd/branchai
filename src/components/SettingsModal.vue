@@ -13,6 +13,8 @@ export interface AppConfig {
   custom_prompt_commit: string;
   custom_prompt_review: string;
   custom_prompt_conflict: string;
+  last_opened_repo?: string | null;
+  recent_repos?: string[];
 }
 
 const emit = defineEmits<{

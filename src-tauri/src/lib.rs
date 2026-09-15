@@ -11,6 +11,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             greet,
+            services::git_service::pick_repository_folder,
             services::git_service::get_commits,
             services::git_service::get_branches,
             services::git_service::get_repo_status,

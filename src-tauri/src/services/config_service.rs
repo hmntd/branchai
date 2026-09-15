@@ -13,6 +13,10 @@ pub struct AppConfig {
     pub custom_prompt_commit: String,
     pub custom_prompt_review: String,
     pub custom_prompt_conflict: String,
+    #[serde(default)]
+    pub last_opened_repo: Option<String>,
+    #[serde(default)]
+    pub recent_repos: Vec<String>,
 }
 
 impl Default for AppConfig {
@@ -27,6 +31,8 @@ impl Default for AppConfig {
             custom_prompt_commit: "Write a concise, high-quality git commit message following Conventional Commits format (e.g., feat:, fix:, refactor:). Include a short subject line (<50 chars) and a detailed body explaining 'why' if necessary. Return ONLY the commit message text.".to_string(),
             custom_prompt_review: "Perform a thorough code review on the provided Git diff. Identify bugs, security issues, performance bottlenecks, and style improvements. Group findings logically with clear line numbers or hunk context.".to_string(),
             custom_prompt_conflict: "Analyze the conflicting code blocks from Git merge conflict markers. Propose a clean, merged resolution that preserves functional intent from both sides without breaking syntax. Return the resolved code file.".to_string(),
+            last_opened_repo: None,
+            recent_repos: Vec::new(),
         }
     }
 }

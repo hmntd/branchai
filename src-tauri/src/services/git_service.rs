@@ -57,6 +57,19 @@ pub struct ConflictFile {
 }
 
 #[tauri::command]
+pub fn pick_repository_folder() -> Result<Option<String>, String> {
+    let folder = rfd::FileDialog::new()
+        .set_title("Select Git Repository Directory")
+        .pick_folder();
+
+    if let Some(path) = folder {
+        Ok(Some(path.to_string_lossy().to_string()))
+    } else {
+        Ok(None)
+    }
+}
+
+#[tauri::command]
 pub fn get_commits(repo_path: String) -> Result<Vec<CommitInfo>, String> {
     let repo = Repository::open(&repo_path).map_err(|e| e.message().to_string())?;
     let mut revwalk = repo.revwalk().map_err(|e| e.message().to_string())?;

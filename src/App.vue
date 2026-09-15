@@ -10,11 +10,12 @@ import AiCodeReview from './components/AiCodeReview.vue';
 import ConflictResolver from './components/ConflictResolver.vue';
 import SettingsModal, { AppConfig } from './components/SettingsModal.vue';
 import TerminalDrawer from './components/TerminalDrawer.vue';
+import WelcomeScreen from './components/WelcomeScreen.vue';
 
 type Tab = 'graph' | 'review' | 'conflicts';
 
 const activeTab = ref<Tab>('graph');
-const repoPath = ref<string>('/home/bazavluk/MyProjects/BranchAI');
+const repoPath = ref<string>('');
 const loading = ref<boolean>(false);
 const showSettings = ref<boolean>(false);
 const showTerminal = ref<boolean>(false);
@@ -34,20 +35,29 @@ const config = ref<AppConfig>({
   custom_prompt_commit: '',
   custom_prompt_review: '',
   custom_prompt_conflict: '',
+  last_opened_repo: null,
+  recent_repos: [],
 });
+
+const isZeroState = computed(() => !repoPath.value.trim());
 
 const stagedCount = computed(() => files.value.filter((f) => f.staged).length);
 const unstagedCount = computed(() => files.value.filter((f) => !f.staged).length);
 const modifiedCount = computed(() => files.value.filter((f) => f.status.includes('modified')).length);
 const addedCount = computed(() => files.value.filter((f) => f.status.includes('new') || f.status === 'untracked').length);
-const lastCommitMsg = computed(() => nodes.value.length > 0 ? nodes.value[0].message : '');
+const lastCommitMsg = computed(() => (nodes.value.length > 0 ? nodes.value[0].message : ''));
 
 async function loadConfig() {
   try {
     const cfg: AppConfig = await invoke('get_config');
     config.value = cfg;
+
+    if (cfg.last_opened_repo && cfg.last_opened_repo.trim()) {
+      repoPath.value = cfg.last_opened_repo.trim();
+      await refreshRepo();
+    }
   } catch (e) {
-    console.error(e);
+    console.error('Failed to load config:', e);
   }
 }
 
@@ -55,18 +65,15 @@ async function refreshRepo() {
   if (!repoPath.value.trim()) return;
   loading.value = true;
   try {
-    // 1. Fetch graph data
     const graphData: GraphNode[] = await invoke('get_graph_data', { repoPath: repoPath.value });
     nodes.value = graphData;
 
-    // 2. Fetch repo status
     const status: { current_branch: string; files: FileStatus[] } = await invoke('get_repo_status', {
       repoPath: repoPath.value,
     });
     files.value = status.files;
     currentBranch.value = status.current_branch;
 
-    // 3. Fetch branches
     const branchList: Array<{ name: string; is_head: boolean; is_remote: boolean }> = await invoke('get_branches', {
       repoPath: repoPath.value,
     });
@@ -78,9 +85,64 @@ async function refreshRepo() {
   }
 }
 
+async function openRepo(path: string) {
+  if (!path || !path.trim()) return;
+  const cleanPath = path.trim();
+  repoPath.value = cleanPath;
+
+  const recent = [...(config.value.recent_repos || [])];
+  const idx = recent.indexOf(cleanPath);
+  if (idx !== -1) {
+    recent.splice(idx, 1);
+  }
+  recent.unshift(cleanPath);
+  config.value.recent_repos = recent;
+  config.value.last_opened_repo = cleanPath;
+
+  try {
+    await invoke('save_config', { config: config.value });
+  } catch (e) {
+    console.error('Failed to save config:', e);
+  }
+
+  await refreshRepo();
+}
+
+async function handleBrowseRepo() {
+  try {
+    const selected: string | null = await invoke('pick_repository_folder');
+    if (selected) {
+      await openRepo(selected);
+    }
+  } catch (err) {
+    console.error('Failed to pick folder:', err);
+  }
+}
+
+async function handleCloseRepo() {
+  repoPath.value = '';
+  config.value.last_opened_repo = null;
+  try {
+    await invoke('save_config', { config: config.value });
+  } catch (e) {
+    console.error('Failed to save config:', e);
+  }
+}
+
+async function handleRemoveRecent(path: string) {
+  config.value.recent_repos = (config.value.recent_repos || []).filter((r) => r !== path);
+  if (config.value.last_opened_repo === path) {
+    config.value.last_opened_repo = null;
+  }
+  try {
+    await invoke('save_config', { config: config.value });
+  } catch (e) {
+    console.error('Failed to save config:', e);
+  }
+}
+
 function handleRepoPathUpdate(newPath: string) {
-  repoPath.value = newPath;
-  refreshRepo();
+  openRepo(newPath);
 }
 
 function handleSelectWip() {
@@ -102,82 +164,101 @@ async function handleCheckoutBranch(branchName: string) {
 
 onMounted(async () => {
   await loadConfig();
-  await refreshRepo();
 });
 </script>
 
 <template>
   <div class="app-layout">
-    <!-- Top Action Toolbar -->
-    <TopBar
-      :repo-path="repoPath"
-      :current-repo="repoPath.split('/').pop() || 'BranchAI'"
-      :current-branch="currentBranch"
-      :staged-count="stagedCount"
-      :unstaged-count="unstagedCount"
-      :last-commit-msg="lastCommitMsg"
+    <!-- Zero-State Welcome Screen when no repository is open -->
+    <WelcomeScreen
+      v-if="isZeroState"
+      :recent-repos="config.recent_repos || []"
       :active-provider="config.active_provider"
       :active-model="config.active_model"
-      :loading="loading"
-      @refresh="refreshRepo"
+      @browse="handleBrowseRepo"
+      @select-repo="openRepo"
+      @remove-recent="handleRemoveRecent"
       @open-settings="showSettings = true"
-      @toggle-terminal="showTerminal = !showTerminal"
     />
 
-    <!-- GitKraken 3-Pane Main Layout -->
-    <div class="main-content">
-      <!-- 1. Left Sidebar -->
-      <LeftSidebar
+    <!-- Active Repository Main Workspace -->
+    <template v-else>
+      <!-- Top Action Toolbar -->
+      <TopBar
         :repo-path="repoPath"
-        :branches="branches"
+        :current-repo="repoPath.split('/').pop() || 'BranchAI'"
         :current-branch="currentBranch"
-        :active-tab="activeTab"
-        @update:repo-path="handleRepoPathUpdate"
-        @select-tab="(t) => activeTab = t as Tab"
-        @open-settings="showSettings = true"
-        @checkout-branch="handleCheckoutBranch"
-      />
-
-      <!-- 2. Middle Pane -->
-      <main class="center-workspace">
-        <BranchGraph
-          v-if="activeTab === 'graph'"
-          :nodes="nodes"
-          :current-branch="currentBranch"
-          :has-changes="files.length > 0"
-          :modified-count="modifiedCount"
-          :added-count="addedCount"
-          @select-wip="handleSelectWip"
-          @checkout-branch="handleCheckoutBranch"
-        />
-        <AiCodeReview
-          v-else-if="activeTab === 'review'"
-          :repo-path="repoPath"
-          @close="activeTab = 'graph'"
-        />
-        <ConflictResolver
-          v-else-if="activeTab === 'conflicts'"
-          :repo-path="repoPath"
-          @resolved="refreshRepo"
-          @close="activeTab = 'graph'"
-        />
-
-        <!-- Embedded Terminal Drawer -->
-        <TerminalDrawer
-          v-if="showTerminal"
-          :repo-path="repoPath"
-          @close="showTerminal = false"
-        />
-      </main>
-
-      <!-- 3. Right Sidebar -->
-      <RightStagingPanel
-        :repo-path="repoPath"
-        :files="files"
-        :current-branch="currentBranch"
+        :staged-count="stagedCount"
+        :unstaged-count="unstagedCount"
+        :last-commit-msg="lastCommitMsg"
+        :active-provider="config.active_provider"
+        :active-model="config.active_model"
+        :loading="loading"
         @refresh="refreshRepo"
+        @open-settings="showSettings = true"
+        @toggle-terminal="showTerminal = !showTerminal"
+        @close-repo="handleCloseRepo"
+        @browse-repo="handleBrowseRepo"
       />
-    </div>
+
+      <!-- GitKraken 3-Pane Main Layout -->
+      <div class="main-content">
+        <!-- 1. Left Sidebar -->
+        <LeftSidebar
+          :repo-path="repoPath"
+          :branches="branches"
+          :current-branch="currentBranch"
+          :active-tab="activeTab"
+          :recent-repos="config.recent_repos || []"
+          @update:repo-path="handleRepoPathUpdate"
+          @select-tab="(t) => (activeTab = t as Tab)"
+          @open-settings="showSettings = true"
+          @checkout-branch="handleCheckoutBranch"
+          @close-repo="handleCloseRepo"
+          @browse-repo="handleBrowseRepo"
+        />
+
+        <!-- 2. Middle Pane -->
+        <main class="center-workspace">
+          <BranchGraph
+            v-if="activeTab === 'graph'"
+            :nodes="nodes"
+            :current-branch="currentBranch"
+            :has-changes="files.length > 0"
+            :modified-count="modifiedCount"
+            :added-count="addedCount"
+            @select-wip="handleSelectWip"
+            @checkout-branch="handleCheckoutBranch"
+          />
+          <AiCodeReview
+            v-else-if="activeTab === 'review'"
+            :repo-path="repoPath"
+            @close="activeTab = 'graph'"
+          />
+          <ConflictResolver
+            v-else-if="activeTab === 'conflicts'"
+            :repo-path="repoPath"
+            @resolved="refreshRepo"
+            @close="activeTab = 'graph'"
+          />
+
+          <!-- Embedded Terminal Drawer -->
+          <TerminalDrawer
+            v-if="showTerminal"
+            :repo-path="repoPath"
+            @close="showTerminal = false"
+          />
+        </main>
+
+        <!-- 3. Right Sidebar -->
+        <RightStagingPanel
+          :repo-path="repoPath"
+          :files="files"
+          :current-branch="currentBranch"
+          @refresh="refreshRepo"
+        />
+      </div>
+    </template>
 
     <!-- Settings Modal -->
     <SettingsModal
