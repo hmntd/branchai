@@ -496,6 +496,36 @@ pub fn resolve_conflict(repo_path: String, file_path: String, content: String) -
 }
 
 #[tauri::command]
+pub fn checkout_branch(repo_path: String, branch_name: String) -> Result<String, String> {
+    let repo = Repository::open(&repo_path).map_err(|e| e.message().to_string())?;
+
+    let clean_branch = branch_name.trim();
+    if clean_branch.is_empty() {
+        return Err("Branch name cannot be empty".to_string());
+    }
+
+    let target_obj = repo
+        .revparse_single(&format!("refs/heads/{}", clean_branch))
+        .or_else(|_| repo.revparse_single(clean_branch))
+        .map_err(|e| format!("Could not find branch '{}': {}", clean_branch, e.message()))?;
+
+    let mut opts = git2::build::CheckoutBuilder::new();
+    opts.safe();
+    repo.checkout_tree(&target_obj, Some(&mut opts))
+        .map_err(|e| format!("Failed to checkout branch tree: {}", e.message()))?;
+
+    if repo.find_branch(clean_branch, git2::BranchType::Local).is_ok() {
+        repo.set_head(&format!("refs/heads/{}", clean_branch))
+            .map_err(|e| e.message().to_string())?;
+    } else {
+        repo.set_head_detached(target_obj.id())
+            .map_err(|e| e.message().to_string())?;
+    }
+
+    Ok(format!("Switched to branch '{}'", clean_branch))
+}
+
+#[tauri::command]
 pub fn create_new_branch(repo_path: String, branch_name: String) -> Result<String, String> {
     let repo = Repository::open(&repo_path).map_err(|e| e.message().to_string())?;
     let head_ref = repo.head().map_err(|e| e.message().to_string())?;

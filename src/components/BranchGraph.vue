@@ -25,6 +25,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'selectWip'): void;
+  (e: 'checkoutBranch', branchName: string): void;
 }>();
 
 const selectedNode = ref<GraphNode | null>(null);
@@ -43,6 +44,13 @@ function getBranchName(node: GraphNode): string {
     return node.commit_branch;
   }
   return props.currentBranch || 'master';
+}
+
+function handleDblClickNode(node: GraphNode) {
+  const branchName = getBranchName(node);
+  if (branchName) {
+    emit('checkoutBranch', branchName);
+  }
 }
 
 function getAuthorColor(author: string) {
@@ -264,11 +272,18 @@ watch([() => props.nodes, () => props.hasChanges], () => {
             class="graph-row"
             :class="{ active: selectedNode?.id === node.id && !isWipSelected, 'is-head': node.is_head }"
             @click="selectCommit(node)"
+            @dblclick="handleDblClickNode(node)"
             @mouseenter="hoveredNode = node"
             @mouseleave="hoveredNode = null"
           >
             <div class="col col-branch">
-              <span v-for="b in node.branches" :key="b" class="badge badge-branch">
+              <span
+                v-for="b in node.branches"
+                :key="b"
+                class="badge badge-branch clickable"
+                @dblclick.stop="emit('checkoutBranch', b)"
+                title="Double click to switch to branch"
+              >
                 <GitBranch :size="10" /> {{ b }}
               </span>
             </div>
@@ -281,7 +296,7 @@ watch([() => props.nodes, () => props.hasChanges], () => {
                   <GitBranch :size="11" />
                   <span>Branch: <strong>{{ getBranchName(node) }}</strong></span>
                 </div>
-                <div class="tooltip-hash">Commit {{ node.short_id }} by {{ node.author }}</div>
+                <div class="tooltip-hash">Commit {{ node.short_id }} by {{ node.author }} (double click to checkout)</div>
               </div>
             </div>
             <div class="col col-author">
@@ -290,8 +305,10 @@ watch([() => props.nodes, () => props.hasChanges], () => {
               </div>
               <span class="author-name" :title="node.author">{{ node.author }}</span>
               <span
-                class="avatar-branch-badge"
+                class="avatar-branch-badge clickable"
                 :class="{ 'is-active': hoveredNode?.id === node.id || selectedNode?.id === node.id }"
+                @dblclick.stop="handleDblClickNode(node)"
+                title="Double click to switch to branch"
               >
                 <GitBranch :size="9" />
                 <span>{{ getBranchName(node) }}</span>

@@ -28,6 +28,7 @@ const emit = defineEmits<{
   (e: 'update:repoPath', path: string): void;
   (e: 'selectTab', tab: string): void;
   (e: 'openSettings'): void;
+  (e: 'checkoutBranch', branchName: string): void;
 }>();
 
 const inputPath = ref(props.repoPath);
@@ -128,6 +129,9 @@ function selectRepo(path: string) {
             :key="b.name"
             class="tree-item"
             :class="{ active: b.is_head }"
+            @click="emit('checkoutBranch', b.name)"
+            @dblclick="emit('checkoutBranch', b.name)"
+            title="Click or double click to switch branch"
           >
             <Check v-if="b.is_head" :size="11" class="icon-success" />
             <GitBranch v-else :size="11" class="icon-muted" />
@@ -152,6 +156,9 @@ function selectRepo(path: string) {
             v-for="b in branches.filter(b => b.is_remote)"
             :key="b.name"
             class="tree-item"
+            @click="emit('checkoutBranch', b.name)"
+            @dblclick="emit('checkoutBranch', b.name)"
+            title="Click or double click to checkout branch"
           >
             <Globe :size="11" class="icon-muted" />
             <span class="item-name">{{ b.name }}</span>

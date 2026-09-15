@@ -87,6 +87,19 @@ function handleSelectWip() {
   activeTab.value = 'graph';
 }
 
+async function handleCheckoutBranch(branchName: string) {
+  if (!branchName || branchName === currentBranch.value) return;
+  try {
+    loading.value = true;
+    await invoke('checkout_branch', { repoPath: repoPath.value, branchName });
+    await refreshRepo();
+  } catch (err: any) {
+    console.error('Failed to checkout branch:', err);
+  } finally {
+    loading.value = false;
+  }
+}
+
 onMounted(async () => {
   await loadConfig();
   await refreshRepo();
@@ -122,6 +135,7 @@ onMounted(async () => {
         @update:repo-path="handleRepoPathUpdate"
         @select-tab="(t) => activeTab = t as Tab"
         @open-settings="showSettings = true"
+        @checkout-branch="handleCheckoutBranch"
       />
 
       <!-- 2. Middle Pane -->
@@ -134,6 +148,7 @@ onMounted(async () => {
           :modified-count="modifiedCount"
           :added-count="addedCount"
           @select-wip="handleSelectWip"
+          @checkout-branch="handleCheckoutBranch"
         />
         <AiCodeReview
           v-else-if="activeTab === 'review'"

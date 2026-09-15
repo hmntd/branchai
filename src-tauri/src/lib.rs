@@ -23,6 +23,7 @@ pub fn run() {
             services::git_service::get_graph_data,
             services::git_service::get_conflicts,
             services::git_service::resolve_conflict,
+            services::git_service::checkout_branch,
             services::git_service::create_new_branch,
             services::git_service::undo_commit,
             services::git_service::redo_commit,
