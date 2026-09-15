@@ -1,181 +1,200 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { invoke } from "@tauri-apps/api/core";
+import { ref, onMounted, computed } from 'vue';
+import { invoke } from '@tauri-apps/api/core';
 
-interface CommitInfo {
-  id: string;
-  author: string;
-  message: string;
-  time: number;
-}
+import TopBar from './components/TopBar.vue';
+import LeftSidebar from './components/LeftSidebar.vue';
+import BranchGraph, { GraphNode } from './components/BranchGraph.vue';
+import RightStagingPanel, { FileStatus } from './components/RightStagingPanel.vue';
+import AiCodeReview from './components/AiCodeReview.vue';
+import ConflictResolver from './components/ConflictResolver.vue';
+import SettingsModal, { AppConfig } from './components/SettingsModal.vue';
+import TerminalDrawer from './components/TerminalDrawer.vue';
 
-const greetMsg = ref("");
-const name = ref("");
+type Tab = 'graph' | 'review' | 'conflicts';
 
-async function greet() {
-  // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-  greetMsg.value = await invoke("greet", { name: name.value });
-}
+const activeTab = ref<Tab>('graph');
+const repoPath = ref<string>('/home/bazavluk/MyProjects/BranchAI');
+const loading = ref<boolean>(false);
+const showSettings = ref<boolean>(false);
+const showTerminal = ref<boolean>(false);
 
-async function loadCommits(path: string) {
+const nodes = ref<GraphNode[]>([]);
+const files = ref<FileStatus[]>([]);
+const branches = ref<Array<{ name: string; is_head: boolean; is_remote: boolean }>>([]);
+const currentBranch = ref<string>('');
+
+const config = ref<AppConfig>({
+  openai_key: '',
+  claude_key: '',
+  gemini_key: '',
+  grok_key: '',
+  active_provider: 'openai',
+  active_model: 'gpt-4o',
+  custom_prompt_commit: '',
+  custom_prompt_review: '',
+  custom_prompt_conflict: '',
+});
+
+const stagedCount = computed(() => files.value.filter((f) => f.staged).length);
+const unstagedCount = computed(() => files.value.filter((f) => !f.staged).length);
+const modifiedCount = computed(() => files.value.filter((f) => f.status.includes('modified')).length);
+const addedCount = computed(() => files.value.filter((f) => f.status.includes('new') || f.status === 'untracked').length);
+const lastCommitMsg = computed(() => nodes.value.length > 0 ? nodes.value[0].message : '');
+
+async function loadConfig() {
   try {
-    const commits: CommitInfo[] = await invoke('get_commits', { repoPath: path });
-    console.log("Отримані коміти:", commits);
-  } catch (error) {
-    console.error("Помилка при читанні репозиторію:", error);
+    const cfg: AppConfig = await invoke('get_config');
+    config.value = cfg;
+  } catch (e) {
+    console.error(e);
   }
 }
+
+async function refreshRepo() {
+  if (!repoPath.value.trim()) return;
+  loading.value = true;
+  try {
+    // 1. Fetch graph data
+    const graphData: GraphNode[] = await invoke('get_graph_data', { repoPath: repoPath.value });
+    nodes.value = graphData;
+
+    // 2. Fetch repo status
+    const status: { current_branch: string; files: FileStatus[] } = await invoke('get_repo_status', {
+      repoPath: repoPath.value,
+    });
+    files.value = status.files;
+    currentBranch.value = status.current_branch;
+
+    // 3. Fetch branches
+    const branchList: Array<{ name: string; is_head: boolean; is_remote: boolean }> = await invoke('get_branches', {
+      repoPath: repoPath.value,
+    });
+    branches.value = branchList;
+  } catch (err) {
+    console.error('Error reading repository:', err);
+  } finally {
+    loading.value = false;
+  }
+}
+
+function handleRepoPathUpdate(newPath: string) {
+  repoPath.value = newPath;
+  refreshRepo();
+}
+
+function handleSelectWip() {
+  activeTab.value = 'graph';
+}
+
+onMounted(async () => {
+  await loadConfig();
+  await refreshRepo();
+});
 </script>
 
 <template>
-  <main class="container">
-    <h1>Welcome to Tauri + Vue</h1>
+  <div class="app-layout">
+    <!-- Top Action Toolbar -->
+    <TopBar
+      :repo-path="repoPath"
+      :current-repo="repoPath.split('/').pop() || 'BranchAI'"
+      :current-branch="currentBranch"
+      :staged-count="stagedCount"
+      :unstaged-count="unstagedCount"
+      :last-commit-msg="lastCommitMsg"
+      :active-provider="config.active_provider"
+      :active-model="config.active_model"
+      :loading="loading"
+      @refresh="refreshRepo"
+      @open-settings="showSettings = true"
+      @toggle-terminal="showTerminal = !showTerminal"
+    />
 
-    <div class="row">
-      <a href="https://vite.dev" target="_blank">
-        <img src="/vite.svg" class="logo vite" alt="Vite logo" />
-      </a>
-      <a href="https://tauri.app" target="_blank">
-        <img src="/tauri.svg" class="logo tauri" alt="Tauri logo" />
-      </a>
-      <a href="https://vuejs.org/" target="_blank">
-        <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-      </a>
+    <!-- GitKraken 3-Pane Main Layout -->
+    <div class="main-content">
+      <!-- 1. Left Sidebar -->
+      <LeftSidebar
+        :repo-path="repoPath"
+        :branches="branches"
+        :current-branch="currentBranch"
+        :active-tab="activeTab"
+        @update:repo-path="handleRepoPathUpdate"
+        @select-tab="(t) => activeTab = t as Tab"
+        @open-settings="showSettings = true"
+      />
+
+      <!-- 2. Middle Pane -->
+      <main class="center-workspace">
+        <BranchGraph
+          v-if="activeTab === 'graph'"
+          :nodes="nodes"
+          :current-branch="currentBranch"
+          :has-changes="files.length > 0"
+          :modified-count="modifiedCount"
+          :added-count="addedCount"
+          @select-wip="handleSelectWip"
+        />
+        <AiCodeReview
+          v-else-if="activeTab === 'review'"
+          :repo-path="repoPath"
+          @close="activeTab = 'graph'"
+        />
+        <ConflictResolver
+          v-else-if="activeTab === 'conflicts'"
+          :repo-path="repoPath"
+          @resolved="refreshRepo"
+          @close="activeTab = 'graph'"
+        />
+
+        <!-- Embedded Terminal Drawer -->
+        <TerminalDrawer
+          v-if="showTerminal"
+          :repo-path="repoPath"
+          @close="showTerminal = false"
+        />
+      </main>
+
+      <!-- 3. Right Sidebar -->
+      <RightStagingPanel
+        :repo-path="repoPath"
+        :files="files"
+        :current-branch="currentBranch"
+        @refresh="refreshRepo"
+      />
     </div>
-    <p>Click on the Tauri, Vite, and Vue logos to learn more.</p>
 
-    <form class="row" @submit.prevent="greet">
-      <input id="greet-input" v-model="name" placeholder="Enter a name..." />
-      <button type="submit">Greet</button>
-    </form>
-    <p>{{ greetMsg }}</p>
-
-    <form class="row" @submit.prevent="loadCommits">
-      <input id="commit-input" v-model="name" placeholder="Enter a path..." />
-      <button type="submit">Load commits</button>
-    </form>
-  </main>
+    <!-- Settings Modal -->
+    <SettingsModal
+      v-if="showSettings"
+      @close="showSettings = false"
+      @saved="loadConfig"
+    />
+  </div>
 </template>
 
 <style scoped>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
-}
-
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #249b73);
-}
-</style>
-<style>
-:root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
-
-  color: #0f0f0f;
-  background-color: #f6f6f6;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-}
-
-.container {
-  margin: 0;
-  padding-top: 10vh;
+.app-layout {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  text-align: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  overflow: hidden;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
-}
-
-.row {
+.main-content {
   display: flex;
-  justify-content: center;
+  flex: 1;
+  overflow: hidden;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  text-align: center;
-}
-
-input,
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #0f0f0f;
-  background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-}
-
-button {
-  cursor: pointer;
-}
-
-button:hover {
-  border-color: #396cd8;
-}
-
-button:active {
-  border-color: #396cd8;
-  background-color: #e8e8e8;
-}
-
-input,
-button {
-  outline: none;
-}
-
-#greet-input {
-  margin-right: 5px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-    background-color: #2f2f2f;
-  }
-
-  a:hover {
-    color: #24c8db;
-  }
-
-  input,
-  button {
-    color: #ffffff;
-    background-color: #0f0f0f98;
-  }
-
-  button:active {
-    background-color: #0f0f0f69;
-  }
+.center-workspace {
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  background: var(--bg-dark);
 }
 </style>
