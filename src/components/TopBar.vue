@@ -191,6 +191,10 @@ async function handleCreateBranch() {
   <header class="topbar-container">
     <!-- Top Native Menu Bar -->
     <div class="native-menu-bar">
+      <div class="menu-brand">
+        <img src="/logo.png" alt="BranchAI Logo" class="menu-logo-img" />
+        <span class="menu-app-name">BranchAI</span>
+      </div>
       <span class="menu-item">File</span>
       <span class="menu-item">Edit</span>
       <span class="menu-item">View</span>
@@ -369,6 +373,26 @@ async function handleCreateBranch() {
   background: #121417;
   font-size: 11px;
   color: var(--text-muted);
+}
+
+.menu-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 6px;
+}
+
+.menu-logo-img {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.menu-app-name {
+  font-weight: 700;
+  color: var(--text-main);
+  font-size: 11px;
+  letter-spacing: 0.3px;
 }
 
 .menu-item {

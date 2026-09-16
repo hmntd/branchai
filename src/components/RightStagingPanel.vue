@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, reactive, watch } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import {
   FileText,
@@ -14,7 +14,11 @@ import {
   FolderTree,
   ListFilter,
   CheckCircle2,
+  GitCommit,
 } from '@lucide/vue';
+import FileContextMenu from './FileContextMenu.vue';
+import TreeNodes from './TreeNodes.vue';
+import { GraphNode } from './BranchGraph.vue';
 
 export interface FileStatus {
   path: string;
@@ -26,16 +30,126 @@ const props = defineProps<{
   repoPath: string;
   files: FileStatus[];
   currentBranch: string;
+  selectedCommit?: GraphNode | null;
 }>();
 
 const emit = defineEmits<{
   (e: 'refresh'): void;
+  (e: 'selectWip'): void;
 }>();
 
 const selectedFile = ref<FileStatus | null>(null);
 const diffText = ref<string>('');
 const loadingDiff = ref<boolean>(false);
 const showDiffModal = ref<boolean>(false);
+
+// ── Commit files state ───────────────────────────────────────
+const commitFiles = ref<FileStatus[]>([]);
+const loadingCommitFiles = ref<boolean>(false);
+
+async function loadCommitFiles() {
+  if (!props.selectedCommit) {
+    commitFiles.value = [];
+    return;
+  }
+  loadingCommitFiles.value = true;
+  try {
+    const res: FileStatus[] = await invoke('get_commit_files', {
+      repoPath: props.repoPath,
+      commitId: props.selectedCommit.id,
+    });
+    commitFiles.value = res;
+  } catch (err) {
+    console.error('Failed to load commit files:', err);
+    commitFiles.value = [];
+  } finally {
+    loadingCommitFiles.value = false;
+  }
+}
+
+watch(
+  () => props.selectedCommit?.id,
+  () => {
+    loadCommitFiles();
+  },
+  { immediate: true }
+);
+
+// ── Context menu state ──────────────────────────────────────
+const ctxVisible = ref(false);
+const ctxX = ref(0);
+const ctxY = ref(0);
+const ctxFile = ref<FileStatus | null>(null);
+
+function openContextMenu(e: MouseEvent, file: FileStatus) {
+  e.preventDefault();
+  ctxFile.value = file;
+  ctxX.value = e.clientX;
+  ctxY.value = e.clientY;
+  ctxVisible.value = true;
+}
+
+function closeContextMenu() {
+  ctxVisible.value = false;
+}
+
+// ── View mode (path | tree) ───────────────────────────────────────────────
+const viewMode = ref<'path' | 'tree'>('path');
+
+// ── Tree builder ────────────────────────────────────────────────────────
+interface TreeNode {
+  name: string;
+  fullPath: string;
+  isDir: boolean;
+  children: TreeNode[];
+  file?: FileStatus;
+}
+
+// Tracks open/closed state of folders. Defaults to open.
+const collapsedFolders = reactive<Record<string, boolean>>({});
+
+function toggleFolder(fullPath: string) {
+  collapsedFolders[fullPath] = !collapsedFolders[fullPath];
+}
+
+function buildTree(files: FileStatus[]): TreeNode[] {
+  const root: TreeNode = { name: '', fullPath: '', isDir: true, children: [] };
+
+  for (const file of files) {
+    const parts = file.path.split('/');
+    let node = root;
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      const isLast = i === parts.length - 1;
+      const fullPath = parts.slice(0, i + 1).join('/');
+      let child = node.children.find((c) => c.name === part);
+      if (!child) {
+        child = { name: part, fullPath, isDir: !isLast, children: [] };
+        node.children.push(child);
+      }
+      if (isLast) {
+        child.isDir = false;
+        child.file = file;
+      }
+      node = child;
+    }
+  }
+
+  // Sort: folders first, then files
+  function sortChildren(n: TreeNode) {
+    n.children.sort((a, b) => {
+      if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+    n.children.forEach(sortChildren);
+  }
+  sortChildren(root);
+  return root.children;
+}
+
+const unstagedTree = computed(() => buildTree(unstagedFiles.value));
+const stagedTree   = computed(() => buildTree(stagedFiles.value));
+const commitTree   = computed(() => buildTree(commitFiles.value));
 
 const commitSummary = ref('');
 const commitDescription = ref('');
@@ -60,11 +174,20 @@ async function inspectFileDiff(file: FileStatus) {
   loadingDiff.value = true;
 
   try {
-    const diff: string = await invoke('get_file_diff', {
-      repoPath: props.repoPath,
-      filePath: file.path,
-      staged: file.staged,
-    });
+    let diff: string;
+    if (props.selectedCommit) {
+      diff = await invoke('get_commit_file_diff', {
+        repoPath: props.repoPath,
+        commitId: props.selectedCommit.id,
+        filePath: file.path,
+      });
+    } else {
+      diff = await invoke('get_file_diff', {
+        repoPath: props.repoPath,
+        filePath: file.path,
+        staged: file.staged,
+      });
+    }
     diffText.value = diff;
   } catch (e) {
     diffText.value = 'Failed to load file diff.';
@@ -176,25 +299,132 @@ function getFilePrefix(status: string) {
   if (status.includes('deleted')) return '-';
   return '✎';
 }
+
+// ── Diff parser: produces structured rows with line numbers ────────────────
+interface DiffRow {
+  type: 'add' | 'remove' | 'context' | 'hunk' | 'meta';
+  oldNo: number | null;
+  newNo: number | null;
+  content: string;
+}
+
+const parsedDiffLines = computed((): DiffRow[] => {
+  const rows: DiffRow[] = [];
+  let oldLine = 0;
+  let newLine = 0;
+
+  for (const raw of diffText.value.split('\n')) {
+    // Hunk header: @@ -a,b +c,d @@
+    const hunkMatch = raw.match(/^@@[^+\-]*-(\d+)(?:,\d+)?\s+\+(\d+)(?:,\d+)?/);
+    if (hunkMatch) {
+      oldLine = parseInt(hunkMatch[1], 10);
+      newLine = parseInt(hunkMatch[2], 10);
+      rows.push({ type: 'hunk', oldNo: null, newNo: null, content: raw });
+      continue;
+    }
+
+    if (raw.startsWith('+')) {
+      rows.push({ type: 'add', oldNo: null, newNo: newLine++, content: raw.slice(1) });
+    } else if (raw.startsWith('-')) {
+      rows.push({ type: 'remove', oldNo: oldLine++, newNo: null, content: raw.slice(1) });
+    } else if (raw === '' || raw === '\\ No newline at end of file') {
+      rows.push({ type: 'meta', oldNo: null, newNo: null, content: raw });
+    } else {
+      // context line (starts with space or is plain for untracked files)
+      const text = raw.startsWith(' ') ? raw.slice(1) : raw;
+      rows.push({ type: 'context', oldNo: oldLine++, newNo: newLine++, content: text });
+    }
+  }
+  return rows;
+});
 </script>
 
 <template>
   <aside class="right-staging-panel gk-panel">
-    <!-- Header with Changes Summary -->
-    <div class="panel-header">
+    <!-- Header: Commit view or WIP view -->
+    <div v-if="selectedCommit" class="panel-header">
+      <span class="changes-title">
+        {{ commitFiles.length }} file changes in
+        <span class="badge badge-branch">{{ selectedCommit.short_id }}</span>
+      </span>
+
+      <div class="view-toggles">
+        <button
+          class="btn btn-secondary btn-xs"
+          :class="{ active: viewMode === 'path' }"
+          @click="viewMode = 'path'"
+        ><ListFilter :size="11" /> Path</button>
+        <button
+          class="btn btn-secondary btn-xs"
+          :class="{ active: viewMode === 'tree' }"
+          @click="viewMode = 'tree'"
+        ><FolderTree :size="11" /> Tree</button>
+      </div>
+    </div>
+    <div v-else class="panel-header">
       <span class="changes-title">
         {{ files.length }} file changes on
         <span class="badge badge-branch">{{ currentBranch || 'master' }}</span>
       </span>
 
       <div class="view-toggles">
-        <button class="btn btn-secondary btn-xs active"><ListFilter :size="11" /> Path</button>
-        <button class="btn btn-secondary btn-xs"><FolderTree :size="11" /> Tree</button>
+        <button
+          class="btn btn-secondary btn-xs"
+          :class="{ active: viewMode === 'path' }"
+          @click="viewMode = 'path'"
+        ><ListFilter :size="11" /> Path</button>
+        <button
+          class="btn btn-secondary btn-xs"
+          :class="{ active: viewMode === 'tree' }"
+          @click="viewMode = 'tree'"
+        ><FolderTree :size="11" /> Tree</button>
       </div>
     </div>
 
-    <!-- Files Section: Unstaged & Staged -->
-    <div class="files-container">
+    <!-- Files Section for Commit View -->
+    <div v-if="selectedCommit" class="files-container">
+      <div class="accordion-section">
+        <div class="acc-header">
+          <span class="acc-title">Changed Files ({{ commitFiles.length }})</span>
+        </div>
+
+        <!-- PATH view -->
+        <div v-if="viewMode === 'path'" class="file-list">
+          <div
+            v-for="file in commitFiles"
+            :key="file.path"
+            class="file-row"
+            @click="inspectFileDiff(file)"
+            @contextmenu.prevent="openContextMenu($event, file)"
+          >
+            <span class="status-prefix" :class="getFileIconClass(file.status)">{{ getFilePrefix(file.status) }}</span>
+            <span class="file-path">{{ file.path }}</span>
+          </div>
+          <div v-if="commitFiles.length === 0 && !loadingCommitFiles" class="empty-list">No files changed in this commit</div>
+          <div v-if="loadingCommitFiles" class="empty-list">Loading commit files...</div>
+        </div>
+
+        <!-- TREE view -->
+        <div v-if="viewMode === 'tree'" class="file-list">
+          <TreeNodes
+            :nodes="commitTree"
+            :staged="false"
+            :read-only="true"
+            :collapsed-folders="collapsedFolders"
+            @toggle-folder="toggleFolder"
+            @inspect="inspectFileDiff"
+            @context-menu="openContextMenu"
+            :get-icon-class="getFileIconClass"
+            :get-prefix="getFilePrefix"
+          />
+          <div v-if="commitFiles.length === 0 && !loadingCommitFiles" class="empty-list">No files changed in this commit</div>
+          <div v-if="loadingCommitFiles" class="empty-list">Loading commit files...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Files Section for WIP View -->
+    <div v-else class="files-container">
       <!-- Unstaged Files Accordion -->
       <div class="accordion-section">
         <div class="acc-header" @click="isUnstagedOpen = !isUnstagedOpen">
@@ -205,12 +435,14 @@ function getFilePrefix(status: string) {
           </button>
         </div>
 
-        <div v-if="isUnstagedOpen" class="file-list">
+        <!-- PATH view -->
+        <div v-if="isUnstagedOpen && viewMode === 'path'" class="file-list">
           <div
             v-for="file in unstagedFiles"
             :key="file.path"
             class="file-row"
             @click="inspectFileDiff(file)"
+            @contextmenu.prevent="openContextMenu($event, file)"
           >
             <span class="status-prefix" :class="getFileIconClass(file.status)">{{ getFilePrefix(file.status) }}</span>
             <span class="file-path">{{ file.path }}</span>
@@ -218,6 +450,22 @@ function getFilePrefix(status: string) {
               <Plus :size="11" />
             </button>
           </div>
+          <div v-if="unstagedFiles.length === 0" class="empty-list">No unstaged changes</div>
+        </div>
+
+        <!-- TREE view -->
+        <div v-if="isUnstagedOpen && viewMode === 'tree'" class="file-list">
+          <TreeNodes
+            :nodes="unstagedTree"
+            :staged="false"
+            :collapsed-folders="collapsedFolders"
+            @toggle-folder="toggleFolder"
+            @inspect="inspectFileDiff"
+            @stage="stageFile"
+            @context-menu="openContextMenu"
+            :get-icon-class="getFileIconClass"
+            :get-prefix="getFilePrefix"
+          />
           <div v-if="unstagedFiles.length === 0" class="empty-list">No unstaged changes</div>
         </div>
       </div>
@@ -229,12 +477,14 @@ function getFilePrefix(status: string) {
           <span class="acc-title">Staged Files ({{ stagedFiles.length }})</span>
         </div>
 
-        <div v-if="isStagedOpen" class="file-list">
+        <!-- PATH view -->
+        <div v-if="isStagedOpen && viewMode === 'path'" class="file-list">
           <div
             v-for="file in stagedFiles"
             :key="file.path"
             class="file-row staged"
             @click="inspectFileDiff(file)"
+            @contextmenu.prevent="openContextMenu($event, file)"
           >
             <span class="status-prefix text-success">✓</span>
             <span class="file-path">{{ file.path }}</span>
@@ -244,11 +494,41 @@ function getFilePrefix(status: string) {
           </div>
           <div v-if="stagedFiles.length === 0" class="empty-list">No staged changes</div>
         </div>
+
+        <!-- TREE view -->
+        <div v-if="isStagedOpen && viewMode === 'tree'" class="file-list">
+          <TreeNodes
+            :nodes="stagedTree"
+            :staged="true"
+            :collapsed-folders="collapsedFolders"
+            @toggle-folder="toggleFolder"
+            @inspect="inspectFileDiff"
+            @unstage="unstageFile"
+            @context-menu="openContextMenu"
+            :get-icon-class="getFileIconClass"
+            :get-prefix="getFilePrefix"
+          />
+          <div v-if="stagedFiles.length === 0" class="empty-list">No staged changes</div>
+        </div>
       </div>
     </div>
 
-    <!-- GitKraken Commit Composer Box -->
-    <div class="commit-box gk-panel">
+    <!-- Commit Info Box (for Commit mode) -->
+    <div v-if="selectedCommit" class="commit-box gk-panel">
+      <div class="commit-box-header">
+        <span class="commit-icon-label"><GitCommit :size="13" /> Commit {{ selectedCommit.short_id }}</span>
+      </div>
+      <div class="commit-details-body">
+        <div class="commit-msg-preview">{{ selectedCommit.message }}</div>
+        <div class="commit-author-tag">By <strong>{{ selectedCommit.author }}</strong></div>
+      </div>
+      <button class="btn btn-secondary btn-full" @click="emit('selectWip')">
+        Show WIP / Untracked Changes
+      </button>
+    </div>
+
+    <!-- GitKraken Commit Composer Box (for WIP mode) -->
+    <div v-else class="commit-box gk-panel">
       <div class="commit-box-header">
         <span class="commit-icon-label">-o- Commit</span>
       </div>
@@ -319,22 +599,41 @@ function getFilePrefix(status: string) {
           <div v-if="loadingDiff" class="loading">Loading diff...</div>
           <div v-else class="diff-view">
             <div
-              v-for="(line, idx) in diffText.split('\n')"
+              v-for="(row, idx) in parsedDiffLines"
               :key="idx"
               class="diff-line"
               :class="{
-                'diff-add': line.startsWith('+'),
-                'diff-remove': line.startsWith('-'),
-                'diff-header': line.startsWith('@'),
+                'diff-add':    row.type === 'add',
+                'diff-remove': row.type === 'remove',
+                'diff-hunk':   row.type === 'hunk',
+                'diff-meta':   row.type === 'meta',
               }"
             >
-              {{ line }}
+              <span class="diff-gutter diff-gutter-old">{{ row.oldNo ?? '' }}</span>
+              <span class="diff-gutter diff-gutter-new">{{ row.newNo ?? '' }}</span>
+              <span class="diff-sign">{{
+                row.type === 'add' ? '+' :
+                row.type === 'remove' ? '-' :
+                row.type === 'hunk' ? '' : ' '
+              }}</span>
+              <span class="diff-content">{{ row.content }}</span>
             </div>
           </div>
         </div>
       </div>
     </div>
   </aside>
+
+  <!-- File Context Menu -->
+  <FileContextMenu
+    :visible="ctxVisible"
+    :x="ctxX"
+    :y="ctxY"
+    :file="ctxFile"
+    :repo-path="repoPath"
+    @close="closeContextMenu"
+    @refresh="emit('refresh')"
+  />
 </template>
 
 <style scoped>
@@ -475,6 +774,29 @@ function getFilePrefix(status: string) {
   color: var(--text-muted);
 }
 
+.commit-details-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.commit-msg-preview {
+  font-size: 11px;
+  color: var(--text-main);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.commit-author-tag {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
 .checkbox-label {
   display: flex;
   align-items: center;
@@ -608,4 +930,24 @@ function getFilePrefix(status: string) {
 .spinning { animation: spin 1s linear infinite; }
 
 @keyframes spin { 100% { transform: rotate(360deg); } }
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 71, 87, 0.15);
+  color: #ff5555;
+}
 </style>

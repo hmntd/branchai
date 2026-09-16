@@ -127,6 +127,11 @@ input:focus, textarea:focus, select:focus {
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.15);
 }
+.btn-secondary.active {
+  background: rgba(99, 102, 241, 0.22);
+  border-color: rgba(99, 102, 241, 0.6);
+  color: #a5b4fc;
+}
 
 .btn-ai {
   background: linear-gradient(135deg, #8c7ae6 0%, #6c5ce7 100%);
@@ -166,22 +171,107 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* Diff formatting */
-.diff-line {
+.diff-view {
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-all;
 }
+
+.diff-line {
+  display: flex;
+  align-items: stretch;
+  min-height: 20px;
+  white-space: pre;
+}
+
+.diff-line:hover {
+  filter: brightness(1.15);
+}
+
+.diff-gutter {
+  flex-shrink: 0;
+  width: 42px;
+  padding: 0 6px;
+  text-align: right;
+  font-size: 11px;
+  line-height: 20px;
+  color: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.25);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  user-select: none;
+}
+
+.diff-gutter-old {
+  border-right: none;
+}
+
+.diff-sign {
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+  line-height: 20px;
+  font-weight: 700;
+  font-size: 12px;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.diff-content {
+  flex: 1;
+  padding: 0 8px;
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
 .diff-add {
-  background-color: rgba(46, 213, 115, 0.15);
+  background-color: rgba(46, 213, 115, 0.1);
+}
+.diff-add .diff-gutter {
+  background: rgba(46, 213, 115, 0.08);
+  color: rgba(46, 213, 115, 0.5);
+}
+.diff-add .diff-sign {
   color: #2ed573;
 }
+.diff-add .diff-content {
+  color: #2ed573;
+}
+
 .diff-remove {
-  background-color: rgba(255, 71, 87, 0.15);
+  background-color: rgba(255, 71, 87, 0.1);
+}
+.diff-remove .diff-gutter {
+  background: rgba(255, 71, 87, 0.08);
+  color: rgba(255, 71, 87, 0.5);
+}
+.diff-remove .diff-sign {
   color: #ff4757;
 }
-.diff-header {
+.diff-remove .diff-content {
+  color: #ff4757;
+}
+
+.diff-hunk {
+  background: rgba(112, 161, 255, 0.08);
+}
+.diff-hunk .diff-content {
   color: #70a1ff;
   font-weight: 600;
+  font-style: italic;
+}
+.diff-hunk .diff-gutter,
+.diff-hunk .diff-sign {
+  background: rgba(112, 161, 255, 0.06);
+}
+
+.diff-meta .diff-content {
+  color: rgba(255, 255, 255, 0.25);
+  font-style: italic;
+}
+
+/* context lines */
+.diff-line:not(.diff-add):not(.diff-remove):not(.diff-hunk):not(.diff-meta) .diff-content {
+  color: rgba(255, 255, 255, 0.7);
 }

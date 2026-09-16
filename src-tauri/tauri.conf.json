@@ -12,9 +12,9 @@
   "app": {
     "windows": [
       {
-        "title": "branchai",
-        "width": 800,
-        "height": 600
+        "title": "BranchAI",
+        "width": 1280,
+        "height": 800
       }
     ],
     "security": {

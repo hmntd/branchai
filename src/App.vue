@@ -145,7 +145,14 @@ function handleRepoPathUpdate(newPath: string) {
   openRepo(newPath);
 }
 
+const selectedCommit = ref<GraphNode | null>(null);
+
+function handleSelectCommit(node: GraphNode) {
+  selectedCommit.value = node;
+}
+
 function handleSelectWip() {
+  selectedCommit.value = null;
   activeTab.value = 'graph';
 }
 
@@ -228,6 +235,7 @@ onMounted(async () => {
             :modified-count="modifiedCount"
             :added-count="addedCount"
             @select-wip="handleSelectWip"
+            @select-commit="handleSelectCommit"
             @checkout-branch="handleCheckoutBranch"
           />
           <AiCodeReview
@@ -255,7 +263,9 @@ onMounted(async () => {
           :repo-path="repoPath"
           :files="files"
           :current-branch="currentBranch"
+          :selected-commit="selectedCommit"
           @refresh="refreshRepo"
+          @select-wip="handleSelectWip"
         />
       </div>
     </template>

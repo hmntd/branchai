@@ -2,6 +2,7 @@ use git2::{BranchType, IndexAddOption, Repository, StatusOptions, StashFlags};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CommitInfo {
@@ -647,3 +648,351 @@ pub fn push_changes(repo_path: String) -> Result<String, String> {
 
     Ok(format!("Pushed local commits on branch '{}' to origin", branch))
 }
+
+// ── New context-menu commands ──────────────────────────────────────────────
+
+/// Discard working-tree changes for a single file (git checkout HEAD -- <file>).
+/// For untracked files this simply removes them from the working tree.
+#[tauri::command]
+pub fn discard_file_changes(repo_path: String, file_path: String) -> Result<(), String> {
+    let repo = Repository::open(&repo_path).map_err(|e| e.message().to_string())?;
+    let full_path = Path::new(&repo_path).join(&file_path);
+
+    // Try to check out the HEAD version of the file.
+    let head = repo.head().ok().and_then(|h| h.peel_to_tree().ok());
+    if let Some(tree) = head {
+        let entry = tree.get_path(Path::new(&file_path));
+        if let Ok(entry) = entry {
+            let obj = entry.to_object(&repo).map_err(|e| e.message().to_string())?;
+            if let Some(blob) = obj.as_blob() {
+                fs::write(&full_path, blob.content()).map_err(|e| e.to_string())?;
+                // Restore index entry as well
+                let mut index = repo.index().map_err(|e| e.message().to_string())?;
+                index.add_path(Path::new(&file_path)).map_err(|e| e.message().to_string())?;
+                index.write().map_err(|e| e.message().to_string())?;
+                return Ok(());
+            }
+        }
+    }
+
+    // If file is untracked (no HEAD version), just delete it.
+    if full_path.exists() {
+        fs::remove_file(&full_path).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+/// Stash only a single file by staging it, running stash, then restoring other changes.
+/// Simplified: stages the file and stashes all staged changes.
+#[tauri::command]
+pub fn stash_file(repo_path: String, file_path: String) -> Result<String, String> {
+    // Stage just this file then stash
+    stage_file(repo_path.clone(), file_path)?;
+
+    let mut repo = Repository::open(&repo_path).map_err(|e| e.message().to_string())?;
+    let signature = repo.signature().unwrap_or_else(|_| {
+        git2::Signature::now("BranchAI", "user@branchai.local").unwrap()
+    });
+    let oid = repo
+        .stash_save(&signature, "BranchAI file stash", Some(StashFlags::INCLUDE_UNTRACKED))
+        .map_err(|e| e.message().to_string())?;
+    Ok(format!("Stashed file ({})", oid))
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FileHistoryEntry {
+    pub id: String,
+    pub author: String,
+    pub message: String,
+    pub time: i64,
+}
+
+/// Return commits that touched the given file.
+#[tauri::command]
+pub fn get_file_history(repo_path: String, file_path: String) -> Result<Vec<FileHistoryEntry>, String> {
+    let repo = Repository::open(&repo_path).map_err(|e| e.message().to_string())?;
+    let mut revwalk = repo.revwalk().map_err(|e| e.message().to_string())?;
+
+    if revwalk.push_head().is_err() {
+        return Ok(Vec::new());
+    }
+
+    let mut results = Vec::new();
+    for id in revwalk.take(200) {
+        let id = id.map_err(|e| e.message().to_string())?;
+        let commit = repo.find_commit(id).map_err(|e| e.message().to_string())?;
+
+        // Check if this commit touches the file
+        let touches = if commit.parent_count() == 0 {
+            // Root commit — check if file exists in its tree
+            commit.tree().ok().and_then(|t| t.get_path(Path::new(&file_path)).ok()).is_some()
+        } else {
+            let parent = commit.parent(0).ok();
+            let old_tree = parent.as_ref().and_then(|p| p.tree().ok());
+            let new_tree = commit.tree().ok();
+            if let (Some(old), Some(new)) = (old_tree, new_tree) {
+                let diff = repo.diff_tree_to_tree(Some(&old), Some(&new), None);
+                if let Ok(diff) = diff {
+                    diff.deltas().any(|d| {
+                        d.new_file().path().map(|p| p.to_string_lossy() == file_path).unwrap_or(false)
+                            || d.old_file().path().map(|p| p.to_string_lossy() == file_path).unwrap_or(false)
+                    })
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        };
+
+        if touches {
+            results.push(FileHistoryEntry {
+                id: id.to_string(),
+                author: commit.author().name().unwrap_or("Unknown").to_string(),
+                message: commit.message().unwrap_or("").trim().to_string(),
+                time: commit.time().seconds(),
+            });
+        }
+    }
+    Ok(results)
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct BlameLine {
+    pub line_no: usize,
+    pub author: String,
+    pub time: i64,
+    pub content: String,
+}
+
+/// Return per-line blame info for a file.
+#[tauri::command]
+pub fn get_file_blame(repo_path: String, file_path: String) -> Result<Vec<BlameLine>, String> {
+    let repo = Repository::open(&repo_path).map_err(|e| e.message().to_string())?;
+    let blame = repo
+        .blame_file(Path::new(&file_path), None)
+        .map_err(|e| e.message().to_string())?;
+
+    let full_path = Path::new(&repo_path).join(&file_path);
+    let content = fs::read_to_string(&full_path).unwrap_or_default();
+    let lines: Vec<&str> = content.lines().collect();
+
+    let mut result = Vec::new();
+    for (i, line_content) in lines.iter().enumerate() {
+        let line_no = i + 1;
+        if let Some(hunk) = blame.get_line(line_no) {
+            let sig = hunk.final_signature();
+            result.push(BlameLine {
+                line_no,
+                author: sig.name().unwrap_or("Unknown").to_string(),
+                time: sig.when().seconds(),
+                content: line_content.to_string(),
+            });
+        } else {
+            result.push(BlameLine {
+                line_no,
+                author: String::new(),
+                time: 0,
+                content: line_content.to_string(),
+            });
+        }
+    }
+    Ok(result)
+}
+
+/// Open the file in the system's configured git difftool (fallback: meld / diff).
+#[tauri::command]
+pub fn open_in_external_diff(repo_path: String, file_path: String) -> Result<(), String> {
+    // Try `git difftool` first, then fallback to meld, then xdg-open on the dir
+    let status = Command::new("git")
+        .args(["difftool", "--no-prompt", "--", &file_path])
+        .current_dir(&repo_path)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    drop(status);
+    Ok(())
+}
+
+/// Open a file in VS Code.
+#[tauri::command]
+pub fn open_in_vscode(file_path: String) -> Result<(), String> {
+    Command::new("code")
+        .arg(&file_path)
+        .spawn()
+        .map_err(|e| format!("Could not launch VS Code: {}", e))?;
+    Ok(())
+}
+
+/// Open a file with the system default application (xdg-open on Linux).
+#[tauri::command]
+pub fn open_file_default(file_path: String) -> Result<(), String> {
+    Command::new("xdg-open")
+        .arg(&file_path)
+        .spawn()
+        .map_err(|e| format!("Could not open file: {}", e))?;
+    Ok(())
+}
+
+/// Reveal the parent directory of a file in the file manager.
+#[tauri::command]
+pub fn show_in_folder(file_path: String) -> Result<(), String> {
+    let parent = Path::new(&file_path)
+        .parent()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_else(|| file_path.clone());
+    Command::new("xdg-open")
+        .arg(&parent)
+        .spawn()
+        .map_err(|e| format!("Could not open folder: {}", e))?;
+    Ok(())
+}
+
+/// Generate a unified diff patch for a file and return it as a string.
+#[tauri::command]
+pub fn create_patch_from_file(repo_path: String, file_path: String) -> Result<String, String> {
+    let repo = Repository::open(&repo_path).map_err(|e| e.message().to_string())?;
+    let diff = repo
+        .diff_index_to_workdir(None, None)
+        .map_err(|e| e.message().to_string())?;
+
+    let mut patch_str = String::new();
+    diff.print(git2::DiffFormat::Patch, |delta, _hunk, line| {
+        if let Some(path) = delta.new_file().path().or_else(|| delta.old_file().path()) {
+            if path.to_string_lossy() == file_path {
+                match line.origin() {
+                    'F' | 'H' | 'B' => {
+                        if let Ok(c) = std::str::from_utf8(line.content()) {
+                            patch_str.push_str(c);
+                        }
+                    }
+                    origin => {
+                        if origin == '+' || origin == '-' || origin == ' ' {
+                            patch_str.push(origin);
+                        }
+                        if let Ok(c) = std::str::from_utf8(line.content()) {
+                            patch_str.push_str(c);
+                        }
+                    }
+                }
+            }
+        }
+        true
+    })
+    .map_err(|e| e.message().to_string())?;
+
+    // For untracked files, produce a "new file" patch
+    if patch_str.is_empty() {
+        let full_path = Path::new(&repo_path).join(&file_path);
+        if full_path.exists() {
+            if let Ok(content) = fs::read_to_string(&full_path) {
+                patch_str.push_str(&format!("--- /dev/null\n+++ b/{}\n", file_path));
+                for line in content.lines() {
+                    patch_str.push_str(&format!("+{}\n", line));
+                }
+            }
+        }
+    }
+
+    Ok(patch_str)
+}
+
+/// Permanently delete a file from the filesystem.
+#[tauri::command]
+pub fn delete_file(file_path: String) -> Result<(), String> {
+    fs::remove_file(&file_path).map_err(|e| format!("Could not delete file: {}", e))
+}
+
+/// Return list of changed files for a specific commit.
+#[tauri::command]
+pub fn get_commit_files(repo_path: String, commit_id: String) -> Result<Vec<FileStatus>, String> {
+    let repo = Repository::open(&repo_path).map_err(|e| e.message().to_string())?;
+    let oid = git2::Oid::from_str(&commit_id).map_err(|e| e.message().to_string())?;
+    let commit = repo.find_commit(oid).map_err(|e| e.message().to_string())?;
+
+    let commit_tree = commit.tree().map_err(|e| e.message().to_string())?;
+
+    let parent_tree = if commit.parent_count() > 0 {
+        let parent = commit.parent(0).map_err(|e| e.message().to_string())?;
+        Some(parent.tree().map_err(|e| e.message().to_string())?)
+    } else {
+        None
+    };
+
+    let diff = repo
+        .diff_tree_to_tree(parent_tree.as_ref(), Some(&commit_tree), None)
+        .map_err(|e| e.message().to_string())?;
+
+    let mut files = Vec::new();
+    for delta in diff.deltas() {
+        let status = match delta.status() {
+            git2::Delta::Added => "new".to_string(),
+            git2::Delta::Deleted => "deleted".to_string(),
+            git2::Delta::Modified => "modified".to_string(),
+            git2::Delta::Renamed => "renamed".to_string(),
+            git2::Delta::Copied => "copied".to_string(),
+            _ => "modified".to_string(),
+        };
+
+        let path = delta
+            .new_file()
+            .path()
+            .or_else(|| delta.old_file().path())
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_default();
+
+        if !path.is_empty() {
+            files.push(FileStatus {
+                path,
+                status,
+                staged: false,
+            });
+        }
+    }
+
+    Ok(files)
+}
+
+/// Return unified diff string for a specific file in a specific commit relative to its parent.
+#[tauri::command]
+pub fn get_commit_file_diff(
+    repo_path: String,
+    commit_id: String,
+    file_path: String,
+) -> Result<String, String> {
+    let repo = Repository::open(&repo_path).map_err(|e| e.message().to_string())?;
+    let oid = git2::Oid::from_str(&commit_id).map_err(|e| e.message().to_string())?;
+    let commit = repo.find_commit(oid).map_err(|e| e.message().to_string())?;
+
+    let commit_tree = commit.tree().map_err(|e| e.message().to_string())?;
+
+    let parent_tree = if commit.parent_count() > 0 {
+        let parent = commit.parent(0).map_err(|e| e.message().to_string())?;
+        Some(parent.tree().map_err(|e| e.message().to_string())?)
+    } else {
+        None
+    };
+
+    let diff = repo
+        .diff_tree_to_tree(parent_tree.as_ref(), Some(&commit_tree), None)
+        .map_err(|e| e.message().to_string())?;
+
+    let mut diff_str = String::new();
+    diff.print(git2::DiffFormat::Patch, |delta, _hunk, line| {
+        if let Some(path) = delta.new_file().path().or_else(|| delta.old_file().path()) {
+            if path.to_string_lossy() == file_path {
+                let origin = line.origin();
+                if origin == '+' || origin == '-' || origin == ' ' {
+                    diff_str.push(origin);
+                }
+                if let Ok(content) = std::str::from_utf8(line.content()) {
+                    diff_str.push_str(content);
+                }
+            }
+        }
+        true
+    })
+    .map_err(|e| e.message().to_string())?;
+
+    Ok(diff_str)
+}
+

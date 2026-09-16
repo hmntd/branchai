@@ -2,7 +2,6 @@
 import {
   FolderGit2,
   Sparkles,
-  GitBranch,
   ArrowRight,
   Clock,
   Settings,
@@ -34,9 +33,8 @@ const emit = defineEmits<{
 
       <!-- Hero Header -->
       <div class="hero-header">
-        <div class="brand-badge">
-          <GitBranch :size="24" class="icon-primary" />
-          <Sparkles :size="14" class="icon-sparkles" />
+        <div class="brand-badge-wrap">
+          <img src="/logo.png" alt="BranchAI Logo" class="welcome-logo-img" />
         </div>
         <h1 class="welcome-title">Welcome to BranchAI</h1>
         <p class="welcome-subtitle">
@@ -164,15 +162,19 @@ const emit = defineEmits<{
   gap: 8px;
 }
 
-.brand-badge {
+.brand-badge-wrap {
   display: flex;
   align-items: center;
-  gap: 4px;
-  background: rgba(0, 210, 211, 0.1);
-  border: 1px solid rgba(0, 210, 211, 0.3);
-  padding: 10px 14px;
-  border-radius: 50%;
+  justify-content: center;
   margin-bottom: 4px;
+}
+
+.welcome-logo-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(0, 210, 211, 0.35);
+  border: 1px solid rgba(0, 210, 211, 0.4);
 }
 
 .icon-sparkles {

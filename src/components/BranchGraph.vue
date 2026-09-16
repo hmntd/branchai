@@ -25,6 +25,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'selectWip'): void;
+  (e: 'selectCommit', node: GraphNode): void;
   (e: 'checkoutBranch', branchName: string): void;
 }>();
 
@@ -182,6 +183,7 @@ function drawGraph() {
 function selectCommit(node: GraphNode) {
   isWipSelected.value = false;
   selectedNode.value = node;
+  emit('selectCommit', node);
 }
 
 function selectWip() {
