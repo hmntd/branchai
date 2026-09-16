@@ -55,6 +55,8 @@ pub fn run() {
             services::git_service::delete_file,
             services::git_service::get_commit_files,
             services::git_service::get_commit_file_diff,
+            services::git_service::get_repo_remote_info,
+            services::git_service::get_branch_diff_summary,
             services::ai_service::generate_commit_message,
             services::ai_service::analyze_code_review,
             services::ai_service::assist_conflict_resolution,

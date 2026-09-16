@@ -996,3 +996,144 @@ pub fn get_commit_file_diff(
     Ok(diff_str)
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct RepoRemoteInfo {
+    pub remote_url: Option<String>,
+    pub owner: Option<String>,
+    pub repo_name: Option<String>,
+    pub default_branch: String,
+}
+
+#[tauri::command]
+pub fn get_repo_remote_info(repo_path: String) -> Result<RepoRemoteInfo, String> {
+    let repo = Repository::open(&repo_path).map_err(|e| e.message().to_string())?;
+
+    let default_branch = repo
+        .head()
+        .ok()
+        .and_then(|h| h.shorthand().map(|s| s.to_string()))
+        .unwrap_or_else(|| "main".to_string());
+
+    let mut remote_url = None;
+    let mut owner = None;
+    let mut repo_name = None;
+
+    if let Ok(remote) = repo.find_remote("origin") {
+        if let Some(url) = remote.url() {
+            let url_str = url.to_string();
+            remote_url = Some(url_str.clone());
+
+            let clean_url = url_str.trim_end_matches(".git");
+            if clean_url.contains("github.com") {
+                let parts: Vec<&str> = if clean_url.contains("git@github.com:") {
+                    clean_url.split("git@github.com:").collect()
+                } else if clean_url.contains("github.com/") {
+                    clean_url.split("github.com/").collect()
+                } else {
+                    Vec::new()
+                };
+
+                if parts.len() > 1 {
+                    let path_parts: Vec<&str> = parts[1].split('/').collect();
+                    if path_parts.len() >= 2 {
+                        owner = Some(path_parts[0].to_string());
+                        repo_name = Some(path_parts[1].to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(RepoRemoteInfo {
+        remote_url,
+        owner,
+        repo_name,
+        default_branch,
+    })
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct BranchDiffSummary {
+    pub commits: Vec<CommitInfo>,
+    pub files: Vec<FileStatus>,
+}
+
+#[tauri::command]
+pub fn get_branch_diff_summary(
+    repo_path: String,
+    branch_name: String,
+    target_branch: String,
+) -> Result<BranchDiffSummary, String> {
+    let repo = Repository::open(&repo_path).map_err(|e| e.message().to_string())?;
+
+    let branch_ref = repo
+        .find_branch(&branch_name, git2::BranchType::Local)
+        .or_else(|_| repo.find_branch(&branch_name, git2::BranchType::Remote))
+        .map_err(|e| e.message().to_string())?;
+
+    let branch_commit = branch_ref.get().peel_to_commit().map_err(|e| e.message().to_string())?;
+
+    let target_ref = repo
+        .find_branch(&target_branch, git2::BranchType::Local)
+        .or_else(|_| repo.find_branch(&target_branch, git2::BranchType::Remote))
+        .ok();
+
+    let target_commit = target_ref.and_then(|r| r.get().peel_to_commit().ok());
+
+    let mut revwalk = repo.revwalk().map_err(|e| e.message().to_string())?;
+    let _ = revwalk.push(branch_commit.id());
+    if let Some(ref tc) = target_commit {
+        let _ = revwalk.hide(tc.id());
+    }
+
+    let mut commits = Vec::new();
+    for id in revwalk.take(50).flatten() {
+        if let Ok(c) = repo.find_commit(id) {
+            commits.push(CommitInfo {
+                id: id.to_string(),
+                author: c.author().name().unwrap_or("Unknown").to_string(),
+                email: c.author().email().unwrap_or("").to_string(),
+                message: c.message().unwrap_or("").trim().to_string(),
+                time: c.time().seconds(),
+                parents: c.parents().map(|p| p.id().to_string()).collect(),
+            });
+        }
+    }
+
+    let branch_tree = branch_commit.tree().map_err(|e| e.message().to_string())?;
+    let target_tree = target_commit.as_ref().and_then(|c| c.tree().ok());
+
+    let diff = repo
+        .diff_tree_to_tree(target_tree.as_ref(), Some(&branch_tree), None)
+        .map_err(|e| e.message().to_string())?;
+
+    let mut files = Vec::new();
+    for delta in diff.deltas() {
+        let status = match delta.status() {
+            git2::Delta::Added => "new".to_string(),
+            git2::Delta::Deleted => "deleted".to_string(),
+            git2::Delta::Modified => "modified".to_string(),
+            git2::Delta::Renamed => "renamed".to_string(),
+            _ => "modified".to_string(),
+        };
+
+        let path = delta
+            .new_file()
+            .path()
+            .or_else(|| delta.old_file().path())
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_default();
+
+        if !path.is_empty() {
+            files.push(FileStatus {
+                path,
+                status,
+                staged: false,
+            });
+        }
+    }
+
+    Ok(BranchDiffSummary { commits, files })
+}
+
+

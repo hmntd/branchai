@@ -18,6 +18,8 @@ import {
   AlertCircle,
   RefreshCw,
   FolderMinus,
+  FolderGit2,
+  FolderPlus,
 } from '@lucide/vue';
 
 const props = defineProps<{
@@ -30,6 +32,7 @@ const props = defineProps<{
   activeProvider: string;
   activeModel: string;
   loading: boolean;
+  recentRepos?: string[];
 }>();
 
 const emit = defineEmits<{
@@ -38,14 +41,39 @@ const emit = defineEmits<{
   (e: 'toggleTerminal'): void;
   (e: 'closeRepo'): void;
   (e: 'browseRepo'): void;
+  (e: 'selectRepo', path: string): void;
 }>();
 
 const showBranchModal = ref(false);
+const showRepoSearchModal = ref(false);
+const repoSearchInput = ref('');
 const newBranchName = ref('');
 const isActionExecuting = ref(false);
 const actionStatus = ref('');
 const actionIsError = ref(false);
 const undoneCommitMsg = ref('');
+
+const filteredRecentRepos = computed(() => {
+  const list = props.recentRepos || [];
+  const q = repoSearchInput.value.toLowerCase().trim();
+  if (!q) return list;
+  return list.filter((r) => r.toLowerCase().includes(q));
+});
+
+function selectRepository(path: string) {
+  if (!path || !path.trim()) return;
+  emit('selectRepo', path.trim());
+  showRepoSearchModal.value = false;
+  repoSearchInput.value = '';
+}
+
+function handleEnterSearch() {
+  if (repoSearchInput.value.trim()) {
+    selectRepository(repoSearchInput.value.trim());
+  } else if (filteredRecentRepos.value.length > 0) {
+    selectRepository(filteredRecentRepos.value[0]);
+  }
+}
 
 const undoTooltip = computed(() => {
   if (props.lastCommitMsg) {
@@ -195,10 +223,6 @@ async function handleCreateBranch() {
         <img src="/logo.png" alt="BranchAI Logo" class="menu-logo-img" />
         <span class="menu-app-name">BranchAI</span>
       </div>
-      <span class="menu-item">File</span>
-      <span class="menu-item">Edit</span>
-      <span class="menu-item">View</span>
-      <span class="menu-item">Help</span>
 
       <div class="menu-spacer"></div>
 
@@ -308,8 +332,10 @@ async function handleCreateBranch() {
         </div>
       </div>
 
-      <div class="toolbar-search">
+      <!-- Working Search Repository Button -->
+      <div class="toolbar-search" @click="showRepoSearchModal = true" title="Find / Switch Repository">
         <Search :size="13" class="search-icon" />
+        <span class="search-btn-label">Find repository...</span>
       </div>
     </div>
 
@@ -347,6 +373,64 @@ async function handleCreateBranch() {
             <RefreshCw v-if="isActionExecuting" :size="13" class="spinning" />
             <Plus v-else :size="13" />
             Create & Checkout Branch
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search / Switch Repository Dialog Modal -->
+    <div v-if="showRepoSearchModal" class="modal-overlay" @click.self="showRepoSearchModal = false">
+      <div class="modal-card repo-search-modal">
+        <div class="modal-header">
+          <FolderGit2 :size="16" class="icon-primary" />
+          <span class="title">Find or Open Repository</span>
+          <button class="icon-btn" @click="showRepoSearchModal = false"><X :size="16" /></button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-search-box">
+            <Search :size="14" class="search-box-icon" />
+            <input
+              v-model="repoSearchInput"
+              @keyup.enter="handleEnterSearch"
+              placeholder="Search recent or enter full repository path..."
+              class="repo-path-input"
+              autofocus
+            />
+          </div>
+
+          <div class="recent-repos-section">
+            <div class="section-title">Recent Repositories</div>
+            <div v-if="filteredRecentRepos.length === 0" class="empty-recent">
+              No matching repositories found. Press Enter to open path.
+            </div>
+            <div class="repo-results-list" v-else>
+              <div
+                v-for="repo in filteredRecentRepos"
+                :key="repo"
+                class="repo-result-item"
+                :class="{ active: repo === repoPath }"
+                @click="selectRepository(repo)"
+              >
+                <FolderGit2 :size="14" class="repo-item-icon" />
+                <div class="repo-item-info">
+                  <span class="repo-item-name">{{ repo.split('/').pop() || repo }}</span>
+                  <span class="repo-item-path">{{ repo }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="emit('browseRepo'); showRepoSearchModal = false">
+            <FolderPlus :size="13" />
+            Browse Folder...
+          </button>
+          <button
+            class="btn btn-primary"
+            @click="handleEnterSearch"
+            :disabled="!repoSearchInput.trim() && filteredRecentRepos.length === 0"
+          >
+            Open Repository
           </button>
         </div>
       </div>
@@ -547,14 +631,27 @@ async function handleCreateBranch() {
 .toolbar-search {
   display: flex;
   align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toolbar-search:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--primary);
+}
+
+.search-btn-label {
+  font-size: 11px;
+  color: var(--text-dim);
 }
 
 .search-icon {
   color: var(--text-dim);
-  cursor: pointer;
-}
-.search-icon:hover {
-  color: var(--text-main);
 }
 
 .icon-btn {
@@ -610,6 +707,10 @@ async function handleCreateBranch() {
   flex-direction: column;
 }
 
+.repo-search-modal {
+  width: 520px;
+}
+
 .modal-header {
   display: flex;
   align-items: center;
@@ -640,6 +741,111 @@ async function handleCreateBranch() {
   font-family: var(--font-mono);
   font-size: 12px;
   width: 100%;
+}
+
+.modal-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 12px;
+}
+
+.modal-search-box:focus-within {
+  border-color: var(--primary);
+}
+
+.search-box-icon {
+  color: var(--text-dim);
+}
+
+.repo-path-input {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  width: 100%;
+  outline: none;
+}
+
+.recent-repos-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.section-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+}
+
+.repo-results-list {
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.repo-result-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.repo-result-item:hover {
+  background: rgba(0, 210, 211, 0.1);
+  border-color: var(--primary);
+}
+
+.repo-result-item.active {
+  background: rgba(0, 210, 211, 0.15);
+  border-color: var(--primary);
+}
+
+.repo-item-icon {
+  color: var(--primary);
+}
+
+.repo-item-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.repo-item-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.repo-item-path {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.empty-recent {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  padding: 12px 0;
+  text-align: center;
 }
 
 .modal-footer {

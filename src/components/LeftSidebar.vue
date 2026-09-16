@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import {
   FolderGit2,
   GitBranch,
@@ -11,10 +11,8 @@ import {
   Check,
   Globe,
   Search,
-  Cloud,
   GitPullRequest,
   AlertCircle,
-  Users,
   FolderPlus,
   FolderMinus,
 } from '@lucide/vue';
@@ -41,13 +39,39 @@ const filterText = ref('');
 
 const isLocalOpen = ref(true);
 const isRemoteOpen = ref(true);
-const isCloudOpen = ref(false);
-const isPrOpen = ref(false);
 const isAiOpen = ref(true);
 
-watch(() => props.repoPath, (newVal) => {
-  inputPath.value = newVal;
+const prCount = computed(() => {
+  return props.branches.filter((b) => !b.is_remote && !b.is_head && b.name !== 'main' && b.name !== 'master').length;
 });
+
+const issueCount = ref(0);
+
+function loadIssueCount() {
+  if (!props.repoPath || !props.repoPath.trim()) {
+    issueCount.value = 0;
+    return;
+  }
+  let count = 0;
+  const storageKey = `branchai_issues_${props.repoPath.trim()}`;
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (raw) {
+      const parsed: any[] = JSON.parse(raw);
+      count += parsed.filter((i) => i.status === 'open').length;
+    }
+  } catch (e) { }
+  issueCount.value = count;
+}
+
+watch(
+  () => props.repoPath,
+  (newVal) => {
+    inputPath.value = newVal;
+    loadIssueCount();
+  },
+  { immediate: true }
+);
 
 function handleRepoSubmit() {
   if (inputPath.value.trim()) {
@@ -74,12 +98,7 @@ function selectRepo(path: string) {
       </div>
 
       <div class="repo-input-box">
-        <input
-          v-model="inputPath"
-          @keyup.enter="handleRepoSubmit"
-          placeholder="Git repo path..."
-          class="repo-input"
-        />
+        <input v-model="inputPath" @keyup.enter="handleRepoSubmit" placeholder="Git repo path..." class="repo-input" />
         <button @click="emit('browseRepo')" class="btn btn-secondary btn-xs" title="Browse repository folder natively">
           <FolderPlus :size="11" /> Browse
         </button>
@@ -89,13 +108,8 @@ function selectRepo(path: string) {
       <div class="recent-repos" v-if="recentRepos && recentRepos.length > 0">
         <span class="recent-label">RECENT PROJECTS:</span>
         <div class="recent-tags">
-          <span
-            v-for="r in recentRepos.slice(0, 6)"
-            :key="r"
-            class="repo-tag"
-            :class="{ active: repoPath === r }"
-            @click="selectRepo(r)"
-          >
+          <span v-for="r in recentRepos.slice(0, 6)" :key="r" class="repo-tag" :class="{ active: repoPath === r }"
+            @click="selectRepo(r)">
             {{ r.split('/').pop() || r }}
           </span>
         </div>
@@ -108,11 +122,7 @@ function selectRepo(path: string) {
     <div class="filter-box">
       <span class="viewing-count">Viewing 2</span>
       <div class="filter-input-wrap">
-        <input
-          v-model="filterText"
-          placeholder="Filter (Ctrl + Alt + f)"
-          class="filter-input"
-        />
+        <input v-model="filterText" placeholder="Filter (Ctrl + Alt + f)" class="filter-input" />
         <Search :size="11" class="search-icon" />
       </div>
     </div>
@@ -124,17 +134,12 @@ function selectRepo(path: string) {
         <div class="group-header" @click="isLocalOpen = !isLocalOpen">
           <component :is="isLocalOpen ? ChevronDown : ChevronRight" :size="11" />
           <span class="group-title">LOCAL</span>
-          <span class="count">{{ branches.filter(b => !b.is_remote).length || 1 }}</span>
+          <span class="count">{{branches.filter(b => !b.is_remote).length || 1}}</span>
         </div>
         <div v-if="isLocalOpen" class="group-body">
-          <div
-            v-for="b in branches.filter(b => !b.is_remote)"
-            :key="b.name"
-            class="tree-item"
-            :class="{ active: b.is_head }"
-            @dblclick="emit('checkoutBranch', b.name)"
-            title="Double click to switch branch"
-          >
+          <div v-for="b in branches.filter(b => !b.is_remote)" :key="b.name" class="tree-item"
+            :class="{ active: b.is_head }" @dblclick="emit('checkoutBranch', b.name)"
+            title="Double click to switch branch">
             <Check v-if="b.is_head" :size="11" class="icon-success" />
             <GitBranch v-else :size="11" class="icon-muted" />
             <span class="item-name">{{ b.name }}</span>
@@ -151,16 +156,11 @@ function selectRepo(path: string) {
         <div class="group-header" @click="isRemoteOpen = !isRemoteOpen">
           <component :is="isRemoteOpen ? ChevronDown : ChevronRight" :size="11" />
           <span class="group-title">REMOTE</span>
-          <span class="count">{{ branches.filter(b => b.is_remote).length || 1 }}</span>
+          <span class="count">{{branches.filter(b => b.is_remote).length || 1}}</span>
         </div>
         <div v-if="isRemoteOpen" class="group-body">
-          <div
-            v-for="b in branches.filter(b => b.is_remote)"
-            :key="b.name"
-            class="tree-item"
-            @dblclick="emit('checkoutBranch', b.name)"
-            title="Double click to checkout branch"
-          >
+          <div v-for="b in branches.filter(b => b.is_remote)" :key="b.name" class="tree-item"
+            @dblclick="emit('checkoutBranch', b.name)" title="Double click to checkout branch">
             <Globe :size="11" class="icon-muted" />
             <span class="item-name">{{ b.name }}</span>
           </div>
@@ -171,40 +171,22 @@ function selectRepo(path: string) {
         </div>
       </div>
 
-      <!-- CLOUD PATCHES -->
-      <div class="tree-group">
-        <div class="group-header" @click="isCloudOpen = !isCloudOpen">
-          <component :is="isCloudOpen ? ChevronDown : ChevronRight" :size="11" />
-          <Cloud :size="11" class="icon-muted" />
-          <span class="group-title">CLOUD PATCHES</span>
-          <span class="count">0</span>
-        </div>
-      </div>
-
       <!-- PULL REQUESTS -->
       <div class="tree-group">
-        <div class="group-header" @click="isPrOpen = !isPrOpen">
-          <component :is="isPrOpen ? ChevronDown : ChevronRight" :size="11" />
-          <GitPullRequest :size="11" class="icon-muted" />
+        <div class="group-header" :class="{ active: activeTab === 'pull_requests' }"
+          @click="emit('selectTab', 'pull_requests')">
+          <GitPullRequest :size="12" :class="activeTab === 'pull_requests' ? 'icon-primary' : 'icon-muted'" />
           <span class="group-title">PULL REQUESTS</span>
-          <span class="count">0</span>
+          <span class="count-pill">{{ prCount }}</span>
         </div>
       </div>
 
-      <!-- ISSUES & TEAMS -->
+      <!-- ISSUES -->
       <div class="tree-group">
-        <div class="group-header">
-          <ChevronRight :size="11" />
-          <AlertCircle :size="11" class="icon-muted" />
+        <div class="group-header" :class="{ active: activeTab === 'issues' }" @click="emit('selectTab', 'issues')">
+          <AlertCircle :size="12" :class="activeTab === 'issues' ? 'icon-warning' : 'icon-muted'" />
           <span class="group-title">ISSUES</span>
-        </div>
-      </div>
-
-      <div class="tree-group">
-        <div class="group-header">
-          <ChevronRight :size="11" />
-          <Users :size="11" class="icon-muted" />
-          <span class="group-title">TEAMS</span>
+          <span class="count-pill warning">{{ issueCount }}</span>
         </div>
       </div>
 
@@ -217,20 +199,12 @@ function selectRepo(path: string) {
           <span class="group-title text-purple">AI TOOLS & REVIEWS</span>
         </div>
         <div v-if="isAiOpen" class="group-body">
-          <div
-            class="tree-item"
-            :class="{ active: activeTab === 'review' }"
-            @click="emit('selectTab', 'review')"
-          >
+          <div class="tree-item" :class="{ active: activeTab === 'review' }" @click="emit('selectTab', 'review')">
             <ShieldCheck :size="12" class="icon-purple" />
             <span class="item-name">AI Code Reviewer</span>
           </div>
 
-          <div
-            class="tree-item"
-            :class="{ active: activeTab === 'conflicts' }"
-            @click="emit('selectTab', 'conflicts')"
-          >
+          <div class="tree-item" :class="{ active: activeTab === 'conflicts' }" @click="emit('selectTab', 'conflicts')">
             <AlertOctagon :size="12" class="icon-warning" />
             <span class="item-name">Conflict Assistant</span>
           </div>
@@ -409,6 +383,18 @@ function selectRepo(path: string) {
   cursor: pointer;
 }
 
+.group-header:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+  border-radius: 4px;
+}
+
+.group-header.active {
+  background: rgba(0, 210, 211, 0.12);
+  color: var(--primary);
+  border-radius: 4px;
+}
+
 .group-title {
   flex: 1;
   letter-spacing: 0.5px;
@@ -417,6 +403,23 @@ function selectRepo(path: string) {
 .count {
   font-size: 10px;
   color: var(--text-dim);
+}
+
+.count-pill {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  background: rgba(0, 210, 211, 0.2);
+  color: var(--primary);
+  padding: 1px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 210, 211, 0.4);
+}
+
+.count-pill.warning {
+  background: rgba(255, 165, 2, 0.2);
+  color: var(--warning);
+  border-color: rgba(255, 165, 2, 0.4);
 }
 
 .group-body {
@@ -448,7 +451,16 @@ function selectRepo(path: string) {
   background: rgba(0, 210, 211, 0.12);
 }
 
-.text-purple { color: #9c88ff; }
-.icon-purple { color: #9c88ff; }
-.btn-xs { padding: 3px 6px; font-size: 10px; }
+.text-purple {
+  color: #9c88ff;
+}
+
+.icon-purple {
+  color: #9c88ff;
+}
+
+.btn-xs {
+  padding: 3px 6px;
+  font-size: 10px;
+}
 </style>

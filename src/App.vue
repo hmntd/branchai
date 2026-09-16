@@ -1,18 +1,19 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
-
 import TopBar from './components/TopBar.vue';
 import LeftSidebar from './components/LeftSidebar.vue';
 import BranchGraph, { GraphNode } from './components/BranchGraph.vue';
 import RightStagingPanel, { FileStatus } from './components/RightStagingPanel.vue';
 import AiCodeReview from './components/AiCodeReview.vue';
 import ConflictResolver from './components/ConflictResolver.vue';
+import PullRequestsView from './components/PullRequestsView.vue';
+import IssuesView from './components/IssuesView.vue';
 import SettingsModal, { AppConfig } from './components/SettingsModal.vue';
 import TerminalDrawer from './components/TerminalDrawer.vue';
 import WelcomeScreen from './components/WelcomeScreen.vue';
 
-type Tab = 'graph' | 'review' | 'conflicts';
+type Tab = 'graph' | 'review' | 'conflicts' | 'pull_requests' | 'issues';
 
 const activeTab = ref<Tab>('graph');
 const repoPath = ref<string>('');
@@ -177,105 +178,52 @@ onMounted(async () => {
 <template>
   <div class="app-layout">
     <!-- Zero-State Welcome Screen when no repository is open -->
-    <WelcomeScreen
-      v-if="isZeroState"
-      :recent-repos="config.recent_repos || []"
-      :active-provider="config.active_provider"
-      :active-model="config.active_model"
-      @browse="handleBrowseRepo"
-      @select-repo="openRepo"
-      @remove-recent="handleRemoveRecent"
-      @open-settings="showSettings = true"
-    />
+    <WelcomeScreen v-if="isZeroState" :recent-repos="config.recent_repos || []"
+      :active-provider="config.active_provider" :active-model="config.active_model" @browse="handleBrowseRepo"
+      @select-repo="openRepo" @remove-recent="handleRemoveRecent" @open-settings="showSettings = true" />
 
     <!-- Active Repository Main Workspace -->
     <template v-else>
       <!-- Top Action Toolbar -->
-      <TopBar
-        :repo-path="repoPath"
-        :current-repo="repoPath.split('/').pop() || 'BranchAI'"
-        :current-branch="currentBranch"
-        :staged-count="stagedCount"
-        :unstaged-count="unstagedCount"
-        :last-commit-msg="lastCommitMsg"
-        :active-provider="config.active_provider"
-        :active-model="config.active_model"
-        :loading="loading"
-        @refresh="refreshRepo"
-        @open-settings="showSettings = true"
-        @toggle-terminal="showTerminal = !showTerminal"
-        @close-repo="handleCloseRepo"
-        @browse-repo="handleBrowseRepo"
-      />
+      <TopBar :repo-path="repoPath" :current-repo="repoPath.split('/').pop() || 'BranchAI'"
+        :current-branch="currentBranch" :staged-count="stagedCount" :unstaged-count="unstagedCount"
+        :last-commit-msg="lastCommitMsg" :active-provider="config.active_provider" :active-model="config.active_model"
+        :loading="loading" :recent-repos="config.recent_repos || []" @refresh="refreshRepo" @open-settings="showSettings = true"
+        @toggle-terminal="showTerminal = !showTerminal" @close-repo="handleCloseRepo" @browse-repo="handleBrowseRepo"
+        @select-repo="openRepo" />
 
       <!-- GitKraken 3-Pane Main Layout -->
       <div class="main-content">
         <!-- 1. Left Sidebar -->
-        <LeftSidebar
-          :repo-path="repoPath"
-          :branches="branches"
-          :current-branch="currentBranch"
-          :active-tab="activeTab"
-          :recent-repos="config.recent_repos || []"
-          @update:repo-path="handleRepoPathUpdate"
-          @select-tab="(t) => (activeTab = t as Tab)"
-          @open-settings="showSettings = true"
-          @checkout-branch="handleCheckoutBranch"
-          @close-repo="handleCloseRepo"
-          @browse-repo="handleBrowseRepo"
-        />
+        <LeftSidebar :repo-path="repoPath" :branches="branches" :current-branch="currentBranch" :active-tab="activeTab"
+          :recent-repos="config.recent_repos || []" @update:repo-path="handleRepoPathUpdate"
+          @select-tab="(t) => (activeTab = t as Tab)" @open-settings="showSettings = true"
+          @checkout-branch="handleCheckoutBranch" @close-repo="handleCloseRepo" @browse-repo="handleBrowseRepo" />
 
         <!-- 2. Middle Pane -->
         <main class="center-workspace">
-          <BranchGraph
-            v-if="activeTab === 'graph'"
-            :nodes="nodes"
-            :current-branch="currentBranch"
-            :has-changes="files.length > 0"
-            :modified-count="modifiedCount"
-            :added-count="addedCount"
-            @select-wip="handleSelectWip"
-            @select-commit="handleSelectCommit"
-            @checkout-branch="handleCheckoutBranch"
-          />
-          <AiCodeReview
-            v-else-if="activeTab === 'review'"
-            :repo-path="repoPath"
-            @close="activeTab = 'graph'"
-          />
-          <ConflictResolver
-            v-else-if="activeTab === 'conflicts'"
-            :repo-path="repoPath"
-            @resolved="refreshRepo"
-            @close="activeTab = 'graph'"
-          />
+          <BranchGraph v-if="activeTab === 'graph'" :nodes="nodes" :current-branch="currentBranch"
+            :has-changes="files.length > 0" :modified-count="modifiedCount" :added-count="addedCount"
+            @select-wip="handleSelectWip" @select-commit="handleSelectCommit" @checkout-branch="handleCheckoutBranch" />
+          <AiCodeReview v-else-if="activeTab === 'review'" :repo-path="repoPath" @close="activeTab = 'graph'" />
+          <ConflictResolver v-else-if="activeTab === 'conflicts'" :repo-path="repoPath" @resolved="refreshRepo"
+            @close="activeTab = 'graph'" />
+          <PullRequestsView v-else-if="activeTab === 'pull_requests'" :repo-path="repoPath" :branches="branches"
+            :current-branch="currentBranch" @close="activeTab = 'graph'" />
+          <IssuesView v-else-if="activeTab === 'issues'" :repo-path="repoPath" @close="activeTab = 'graph'" />
 
           <!-- Embedded Terminal Drawer -->
-          <TerminalDrawer
-            v-if="showTerminal"
-            :repo-path="repoPath"
-            @close="showTerminal = false"
-          />
+          <TerminalDrawer v-if="showTerminal" :repo-path="repoPath" @close="showTerminal = false" />
         </main>
 
         <!-- 3. Right Sidebar -->
-        <RightStagingPanel
-          :repo-path="repoPath"
-          :files="files"
-          :current-branch="currentBranch"
-          :selected-commit="selectedCommit"
-          @refresh="refreshRepo"
-          @select-wip="handleSelectWip"
-        />
+        <RightStagingPanel :repo-path="repoPath" :files="files" :current-branch="currentBranch"
+          :selected-commit="selectedCommit" @refresh="refreshRepo" @select-wip="handleSelectWip" />
       </div>
     </template>
 
     <!-- Settings Modal -->
-    <SettingsModal
-      v-if="showSettings"
-      @close="showSettings = false"
-      @saved="loadConfig"
-    />
+    <SettingsModal v-if="showSettings" @close="showSettings = false" @saved="loadConfig" />
   </div>
 </template>
 
