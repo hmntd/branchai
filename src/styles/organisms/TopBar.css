@@ -1,0 +1,349 @@
+/* TopBar.css */
+.topbar-container {
+  display: flex;
+  flex-direction: column;
+  background: #181a1f;
+  border-bottom: 1px solid var(--border-color);
+  user-select: none;
+  position: relative;
+}
+
+.native-menu-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 26px;
+  padding: 0 10px;
+  background: #121417;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.menu-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 6px;
+}
+
+.menu-logo-img {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.menu-app-name {
+  font-weight: 700;
+  color: var(--text-main);
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+
+.menu-item {
+  cursor: pointer;
+}
+.menu-item:hover {
+  color: var(--text-main);
+}
+
+.menu-spacer {
+  flex: 1;
+}
+
+.ai-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #9c88ff;
+  background: rgba(156, 136, 255, 0.15);
+  border: 1px solid rgba(156, 136, 255, 0.3);
+  padding: 2px 7px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 38px;
+  padding: 0 12px;
+  background: #1c2026;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.repo-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+}
+
+.repo-breadcrumb .label {
+  color: var(--text-dim);
+  font-size: 10px;
+}
+
+.repo-breadcrumb .value {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.repo-breadcrumb .value-branch {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.repo-breadcrumb .sep {
+  color: var(--text-dim);
+}
+
+.close-repo-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+  transition: all 0.15s ease;
+}
+
+.close-repo-btn:hover {
+  background: rgba(255, 71, 87, 0.2);
+  color: var(--danger);
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.has-tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.has-tooltip .tooltip-box {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 6px;
+  background: #121417;
+  color: var(--text-main);
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+}
+
+.has-tooltip:hover .tooltip-box {
+  opacity: 1;
+  visibility: visible;
+}
+
+.tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tool-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+}
+
+.active-term {
+  color: var(--primary);
+}
+.active-term:hover {
+  background: rgba(0, 210, 211, 0.15);
+}
+
+.v-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 3px;
+}
+
+.toolbar-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toolbar-search:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--primary);
+}
+
+.search-btn-label {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.search-icon {
+  color: var(--text-dim);
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 3px;
+}
+.icon-btn:hover {
+  color: var(--text-main);
+}
+
+.repo-search-modal {
+  width: 520px;
+}
+
+.desc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.branch-name-input {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  width: 100%;
+}
+
+.modal-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 12px;
+}
+
+.modal-search-box:focus-within {
+  border-color: var(--primary);
+}
+
+.search-box-icon {
+  color: var(--text-dim);
+}
+
+.repo-path-input {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  width: 100%;
+  outline: none;
+}
+
+.recent-repos-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.section-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+}
+
+.repo-results-list {
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.repo-result-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.repo-result-item:hover {
+  background: rgba(0, 210, 211, 0.1);
+  border-color: var(--primary);
+}
+
+.repo-result-item.active {
+  background: rgba(0, 210, 211, 0.15);
+  border-color: var(--primary);
+}
+
+.repo-item-icon {
+  color: var(--primary);
+}
+
+.repo-item-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.repo-item-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.repo-item-path {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.empty-recent {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  padding: 12px 0;
+  text-align: center;
+}
+
+.spinning { animation: spin 1s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }

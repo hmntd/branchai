@@ -19,6 +19,8 @@ import {
 import FileContextMenu from './FileContextMenu.vue';
 import TreeNodes from './TreeNodes.vue';
 import { GraphNode } from './BranchGraph.vue';
+import BaseBadge from '../atoms/BaseBadge.vue';
+import BaseButton from '../atoms/BaseButton.vue';
 
 export interface FileStatus {
   path: string;
@@ -43,7 +45,7 @@ const diffText = ref<string>('');
 const loadingDiff = ref<boolean>(false);
 const showDiffModal = ref<boolean>(false);
 
-// ── Commit files state ───────────────────────────────────────
+// Commit files state
 const commitFiles = ref<FileStatus[]>([]);
 const loadingCommitFiles = ref<boolean>(false);
 
@@ -75,7 +77,7 @@ watch(
   { immediate: true }
 );
 
-// ── Context menu state ──────────────────────────────────────
+// Context menu state
 const ctxVisible = ref(false);
 const ctxX = ref(0);
 const ctxY = ref(0);
@@ -93,10 +95,10 @@ function closeContextMenu() {
   ctxVisible.value = false;
 }
 
-// ── View mode (path | tree) ───────────────────────────────────────────────
+// View mode (path | tree)
 const viewMode = ref<'path' | 'tree'>('path');
 
-// ── Tree builder ────────────────────────────────────────────────────────
+// Tree builder
 interface TreeNode {
   name: string;
   fullPath: string;
@@ -148,8 +150,8 @@ function buildTree(files: FileStatus[]): TreeNode[] {
 }
 
 const unstagedTree = computed(() => buildTree(unstagedFiles.value));
-const stagedTree   = computed(() => buildTree(stagedFiles.value));
-const commitTree   = computed(() => buildTree(commitFiles.value));
+const stagedTree = computed(() => buildTree(stagedFiles.value));
+const commitTree = computed(() => buildTree(commitFiles.value));
 
 const commitSummary = ref('');
 const commitDescription = ref('');
@@ -300,7 +302,7 @@ function getFilePrefix(status: string) {
   return '✎';
 }
 
-// ── Diff parser: produces structured rows with line numbers ────────────────
+// Diff parser: produces structured rows with line numbers
 interface DiffRow {
   type: 'add' | 'remove' | 'context' | 'hunk' | 'meta';
   oldNo: number | null;
@@ -345,39 +347,31 @@ const parsedDiffLines = computed((): DiffRow[] => {
     <div v-if="selectedCommit" class="panel-header">
       <span class="changes-title">
         {{ commitFiles.length }} file changes in
-        <span class="badge badge-branch">{{ selectedCommit.short_id }}</span>
+        <BaseBadge variant="branch">{{ selectedCommit.short_id }}</BaseBadge>
       </span>
 
       <div class="view-toggles">
-        <button
-          class="btn btn-secondary btn-xs"
-          :class="{ active: viewMode === 'path' }"
-          @click="viewMode = 'path'"
-        ><ListFilter :size="11" /> Path</button>
-        <button
-          class="btn btn-secondary btn-xs"
-          :class="{ active: viewMode === 'tree' }"
-          @click="viewMode = 'tree'"
-        ><FolderTree :size="11" /> Tree</button>
+        <BaseButton size="xs" variant="secondary" :active="viewMode === 'path'" @click="viewMode = 'path'">
+          <ListFilter :size="11" /> Path
+        </BaseButton>
+        <BaseButton size="xs" variant="secondary" :active="viewMode === 'tree'" @click="viewMode = 'tree'">
+          <FolderTree :size="11" /> Tree
+        </BaseButton>
       </div>
     </div>
     <div v-else class="panel-header">
       <span class="changes-title">
         {{ files.length }} file changes on
-        <span class="badge badge-branch">{{ currentBranch || 'master' }}</span>
+        <BaseBadge variant="branch">{{ currentBranch || 'master' }}</BaseBadge>
       </span>
 
       <div class="view-toggles">
-        <button
-          class="btn btn-secondary btn-xs"
-          :class="{ active: viewMode === 'path' }"
-          @click="viewMode = 'path'"
-        ><ListFilter :size="11" /> Path</button>
-        <button
-          class="btn btn-secondary btn-xs"
-          :class="{ active: viewMode === 'tree' }"
-          @click="viewMode = 'tree'"
-        ><FolderTree :size="11" /> Tree</button>
+        <BaseButton size="xs" variant="secondary" :active="viewMode === 'path'" @click="viewMode = 'path'">
+          <ListFilter :size="11" /> Path
+        </BaseButton>
+        <BaseButton size="xs" variant="secondary" :active="viewMode === 'tree'" @click="viewMode = 'tree'">
+          <FolderTree :size="11" /> Tree
+        </BaseButton>
       </div>
     </div>
 
@@ -390,34 +384,23 @@ const parsedDiffLines = computed((): DiffRow[] => {
 
         <!-- PATH view -->
         <div v-if="viewMode === 'path'" class="file-list">
-          <div
-            v-for="file in commitFiles"
-            :key="file.path"
-            class="file-row"
-            @click="inspectFileDiff(file)"
-            @contextmenu.prevent="openContextMenu($event, file)"
-          >
+          <div v-for="file in commitFiles" :key="file.path" class="file-row" @click="inspectFileDiff(file)"
+            @contextmenu.prevent="openContextMenu($event, file)">
             <span class="status-prefix" :class="getFileIconClass(file.status)">{{ getFilePrefix(file.status) }}</span>
             <span class="file-path">{{ file.path }}</span>
           </div>
-          <div v-if="commitFiles.length === 0 && !loadingCommitFiles" class="empty-list">No files changed in this commit</div>
+          <div v-if="commitFiles.length === 0 && !loadingCommitFiles" class="empty-list">No files changed in this commit
+          </div>
           <div v-if="loadingCommitFiles" class="empty-list">Loading commit files...</div>
         </div>
 
         <!-- TREE view -->
         <div v-if="viewMode === 'tree'" class="file-list">
-          <TreeNodes
-            :nodes="commitTree"
-            :staged="false"
-            :read-only="true"
-            :collapsed-folders="collapsedFolders"
-            @toggle-folder="toggleFolder"
-            @inspect="inspectFileDiff"
-            @context-menu="openContextMenu"
-            :get-icon-class="getFileIconClass"
-            :get-prefix="getFilePrefix"
-          />
-          <div v-if="commitFiles.length === 0 && !loadingCommitFiles" class="empty-list">No files changed in this commit</div>
+          <TreeNodes :nodes="commitTree" :staged="false" :read-only="true" :collapsed-folders="collapsedFolders"
+            @toggle-folder="toggleFolder" @inspect="inspectFileDiff" @context-menu="openContextMenu"
+            :get-icon-class="getFileIconClass" :get-prefix="getFilePrefix" />
+          <div v-if="commitFiles.length === 0 && !loadingCommitFiles" class="empty-list">No files changed in this commit
+          </div>
           <div v-if="loadingCommitFiles" class="empty-list">Loading commit files...</div>
         </div>
       </div>
@@ -430,20 +413,16 @@ const parsedDiffLines = computed((): DiffRow[] => {
         <div class="acc-header" @click="isUnstagedOpen = !isUnstagedOpen">
           <component :is="isUnstagedOpen ? ChevronDown : ChevronRight" :size="11" />
           <span class="acc-title">Unstaged Files ({{ unstagedFiles.length }})</span>
-          <button v-if="unstagedFiles.length > 0" class="btn btn-primary btn-xs stage-all-btn" @click.stop="stageAll">
+          <BaseButton v-if="unstagedFiles.length > 0" variant="primary" size="xs" class="stage-all-btn"
+            @click.stop="stageAll">
             Stage All Changes
-          </button>
+          </BaseButton>
         </div>
 
         <!-- PATH view -->
         <div v-if="isUnstagedOpen && viewMode === 'path'" class="file-list">
-          <div
-            v-for="file in unstagedFiles"
-            :key="file.path"
-            class="file-row"
-            @click="inspectFileDiff(file)"
-            @contextmenu.prevent="openContextMenu($event, file)"
-          >
+          <div v-for="file in unstagedFiles" :key="file.path" class="file-row" @click="inspectFileDiff(file)"
+            @contextmenu.prevent="openContextMenu($event, file)">
             <span class="status-prefix" :class="getFileIconClass(file.status)">{{ getFilePrefix(file.status) }}</span>
             <span class="file-path">{{ file.path }}</span>
             <button class="stage-btn" @click.stop="stageFile(file)" title="Stage File">
@@ -455,17 +434,9 @@ const parsedDiffLines = computed((): DiffRow[] => {
 
         <!-- TREE view -->
         <div v-if="isUnstagedOpen && viewMode === 'tree'" class="file-list">
-          <TreeNodes
-            :nodes="unstagedTree"
-            :staged="false"
-            :collapsed-folders="collapsedFolders"
-            @toggle-folder="toggleFolder"
-            @inspect="inspectFileDiff"
-            @stage="stageFile"
-            @context-menu="openContextMenu"
-            :get-icon-class="getFileIconClass"
-            :get-prefix="getFilePrefix"
-          />
+          <TreeNodes :nodes="unstagedTree" :staged="false" :collapsed-folders="collapsedFolders"
+            @toggle-folder="toggleFolder" @inspect="inspectFileDiff" @stage="stageFile" @context-menu="openContextMenu"
+            :get-icon-class="getFileIconClass" :get-prefix="getFilePrefix" />
           <div v-if="unstagedFiles.length === 0" class="empty-list">No unstaged changes</div>
         </div>
       </div>
@@ -479,13 +450,8 @@ const parsedDiffLines = computed((): DiffRow[] => {
 
         <!-- PATH view -->
         <div v-if="isStagedOpen && viewMode === 'path'" class="file-list">
-          <div
-            v-for="file in stagedFiles"
-            :key="file.path"
-            class="file-row staged"
-            @click="inspectFileDiff(file)"
-            @contextmenu.prevent="openContextMenu($event, file)"
-          >
+          <div v-for="file in stagedFiles" :key="file.path" class="file-row staged" @click="inspectFileDiff(file)"
+            @contextmenu.prevent="openContextMenu($event, file)">
             <span class="status-prefix text-success">✓</span>
             <span class="file-path">{{ file.path }}</span>
             <button class="stage-btn" @click.stop="unstageFile(file)" title="Unstage File">
@@ -497,17 +463,9 @@ const parsedDiffLines = computed((): DiffRow[] => {
 
         <!-- TREE view -->
         <div v-if="isStagedOpen && viewMode === 'tree'" class="file-list">
-          <TreeNodes
-            :nodes="stagedTree"
-            :staged="true"
-            :collapsed-folders="collapsedFolders"
-            @toggle-folder="toggleFolder"
-            @inspect="inspectFileDiff"
-            @unstage="unstageFile"
-            @context-menu="openContextMenu"
-            :get-icon-class="getFileIconClass"
-            :get-prefix="getFilePrefix"
-          />
+          <TreeNodes :nodes="stagedTree" :staged="true" :collapsed-folders="collapsedFolders"
+            @toggle-folder="toggleFolder" @inspect="inspectFileDiff" @unstage="unstageFile"
+            @context-menu="openContextMenu" :get-icon-class="getFileIconClass" :get-prefix="getFilePrefix" />
           <div v-if="stagedFiles.length === 0" class="empty-list">No staged changes</div>
         </div>
       </div>
@@ -516,15 +474,17 @@ const parsedDiffLines = computed((): DiffRow[] => {
     <!-- Commit Info Box (for Commit mode) -->
     <div v-if="selectedCommit" class="commit-box gk-panel">
       <div class="commit-box-header">
-        <span class="commit-icon-label"><GitCommit :size="13" /> Commit {{ selectedCommit.short_id }}</span>
+        <span class="commit-icon-label">
+          <GitCommit :size="13" /> Commit {{ selectedCommit.short_id }}
+        </span>
       </div>
       <div class="commit-details-body">
         <div class="commit-msg-preview">{{ selectedCommit.message }}</div>
         <div class="commit-author-tag">By <strong>{{ selectedCommit.author }}</strong></div>
       </div>
-      <button class="btn btn-secondary btn-full" @click="emit('selectWip')">
+      <BaseButton variant="secondary" class="btn-full" @click="emit('selectWip')">
         Show WIP / Untracked Changes
-      </button>
+      </BaseButton>
     </div>
 
     <!-- GitKraken Commit Composer Box (for WIP mode) -->
@@ -540,21 +500,12 @@ const parsedDiffLines = computed((): DiffRow[] => {
 
       <div class="inputs-group">
         <div class="summary-wrap">
-          <input
-            v-model="commitSummary"
-            placeholder="Commit summary"
-            class="summary-input"
-          />
+          <input v-model="commitSummary" placeholder="Commit summary" class="summary-input" />
           <span class="char-count" :class="{ 'text-danger': summaryCharCount < 0 }">
             {{ summaryCharCount }}
           </span>
         </div>
-        <textarea
-          v-model="commitDescription"
-          placeholder="Description"
-          rows="3"
-          class="desc-textarea"
-        ></textarea>
+        <textarea v-model="commitDescription" placeholder="Description" rows="3" class="desc-textarea"></textarea>
       </div>
 
       <div v-if="statusMsg" class="status-alert" :class="statusError ? 'alert-danger' : 'alert-success'">
@@ -565,25 +516,18 @@ const parsedDiffLines = computed((): DiffRow[] => {
 
       <div class="actions-group">
         <!-- Purple "Compose commits with AI" button -->
-        <button
-          @click="composeAiCommit"
-          class="btn btn-ai btn-full"
-          :disabled="isGeneratingAi"
-        >
+        <BaseButton variant="ai" class="btn-full" @click="composeAiCommit" :disabled="isGeneratingAi">
           <RefreshCw v-if="isGeneratingAi" :size="13" class="spinning" />
           <Sparkles v-else :size="13" />
           + Compose commits with AI
-        </button>
+        </BaseButton>
 
         <!-- Green Stage & Commit Button -->
-        <button
-          @click="executeCommit"
-          class="btn btn-primary btn-full stage-commit-btn"
-          :disabled="isCommitting || !commitSummary.trim() || stagedFiles.length === 0"
-        >
+        <BaseButton variant="primary" class="btn-full stage-commit-btn" @click="executeCommit"
+          :disabled="isCommitting || !commitSummary.trim() || stagedFiles.length === 0">
           <CheckCircle2 :size="13" />
           {{ isCommitting ? 'Committing...' : `-o- Stage Changes to Commit (${stagedFiles.length})` }}
-        </button>
+        </BaseButton>
       </div>
     </div>
 
@@ -598,23 +542,18 @@ const parsedDiffLines = computed((): DiffRow[] => {
         <div class="modal-body">
           <div v-if="loadingDiff" class="loading">Loading diff...</div>
           <div v-else class="diff-view">
-            <div
-              v-for="(row, idx) in parsedDiffLines"
-              :key="idx"
-              class="diff-line"
-              :class="{
-                'diff-add':    row.type === 'add',
-                'diff-remove': row.type === 'remove',
-                'diff-hunk':   row.type === 'hunk',
-                'diff-meta':   row.type === 'meta',
-              }"
-            >
+            <div v-for="(row, idx) in parsedDiffLines" :key="idx" class="diff-line" :class="{
+              'diff-add': row.type === 'add',
+              'diff-remove': row.type === 'remove',
+              'diff-hunk': row.type === 'hunk',
+              'diff-meta': row.type === 'meta',
+            }">
               <span class="diff-gutter diff-gutter-old">{{ row.oldNo ?? '' }}</span>
               <span class="diff-gutter diff-gutter-new">{{ row.newNo ?? '' }}</span>
               <span class="diff-sign">{{
                 row.type === 'add' ? '+' :
-                row.type === 'remove' ? '-' :
-                row.type === 'hunk' ? '' : ' '
+                  row.type === 'remove' ? '-' :
+                    row.type === 'hunk' ? '' : ' '
               }}</span>
               <span class="diff-content">{{ row.content }}</span>
             </div>
@@ -625,329 +564,8 @@ const parsedDiffLines = computed((): DiffRow[] => {
   </aside>
 
   <!-- File Context Menu -->
-  <FileContextMenu
-    :visible="ctxVisible"
-    :x="ctxX"
-    :y="ctxY"
-    :file="ctxFile"
-    :repo-path="repoPath"
-    @close="closeContextMenu"
-    @refresh="emit('refresh')"
-  />
+  <FileContextMenu :visible="ctxVisible" :x="ctxX" :y="ctxY" :file="ctxFile" :repo-path="repoPath"
+    @close="closeContextMenu" @refresh="emit('refresh')" />
 </template>
 
-<style scoped>
-.right-staging-panel {
-  width: 310px;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-sidebar);
-  border-radius: 0;
-  border-left: 1px solid var(--border-color);
-  user-select: none;
-  overflow: hidden;
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border-color);
-  background: #121417;
-}
-
-.changes-title {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.view-toggles {
-  display: flex;
-  gap: 3px;
-}
-
-.files-container {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 6px;
-}
-
-.accordion-section {
-  display: flex;
-  flex-direction: column;
-}
-
-.acc-header {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 6px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.acc-title {
-  flex: 1;
-}
-
-.stage-all-btn {
-  background: #2ed573;
-  color: #0d1117;
-  font-weight: 700;
-}
-
-.file-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding-left: 8px;
-}
-
-.file-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 6px;
-  border-radius: 3px;
-  font-size: 11px;
-  font-family: var(--font-mono);
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.file-row:hover {
-  background: var(--bg-card-hover);
-}
-
-.status-prefix {
-  font-weight: 700;
-  width: 10px;
-}
-
-.file-path {
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--text-main);
-}
-
-.stage-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 2px 4px;
-}
-.stage-btn:hover {
-  color: var(--text-main);
-}
-
-.empty-list {
-  font-size: 10px;
-  color: var(--text-dim);
-  font-style: italic;
-  padding: 4px 6px;
-}
-
-/* Commit Box */
-.commit-box {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px;
-  background: #181a1f;
-  border-radius: 0;
-  border-top: 1px solid var(--border-color);
-}
-
-.commit-box-header {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-}
-
-.commit-details-body {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid var(--border-color);
-}
-
-.commit-msg-preview {
-  font-size: 11px;
-  color: var(--text-main);
-  line-height: 1.4;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.commit-author-tag {
-  font-size: 10px;
-  color: var(--text-dim);
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.inputs-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.summary-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.summary-input {
-  width: 100%;
-  font-size: 11px;
-  padding: 5px 30px 5px 8px;
-  background: rgba(0, 0, 0, 0.4);
-}
-
-.char-count {
-  position: absolute;
-  right: 8px;
-  font-size: 10px;
-  font-family: var(--font-mono);
-  color: var(--text-dim);
-}
-
-.desc-textarea {
-  font-size: 11px;
-  padding: 5px 8px;
-  background: rgba(0, 0, 0, 0.4);
-  resize: none;
-}
-
-.actions-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.btn-full {
-  width: 100%;
-  justify-content: center;
-  padding: 7px;
-}
-
-.stage-commit-btn {
-  background: #2ed573;
-  color: #0d1117;
-  font-weight: 700;
-}
-
-.status-alert {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  padding: 5px 8px;
-  border-radius: 3px;
-}
-
-.alert-danger {
-  background: rgba(255, 71, 87, 0.15);
-  color: var(--danger);
-}
-
-.alert-success {
-  background: rgba(46, 213, 115, 0.15);
-  color: var(--success);
-}
-
-/* Modal Overlay */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.diff-modal {
-  width: 680px;
-  height: 480px;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-panel);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border-color);
-  font-weight: 600;
-  font-size: 12px;
-}
-
-.modal-header .title {
-  font-family: var(--font-mono);
-  flex: 1;
-}
-
-.modal-body {
-  flex: 1;
-  overflow: auto;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.4);
-}
-
-.text-success { color: var(--success); }
-.text-danger { color: var(--danger); }
-.text-warning { color: var(--warning); }
-.btn-xs { padding: 3px 6px; font-size: 10px; }
-.spinning { animation: spin 1s linear infinite; }
-
-@keyframes spin { 100% { transform: rotate(360deg); } }
-
-.icon-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 4px;
-  line-height: 1;
-  font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s, color 0.15s;
-}
-
-.icon-btn:hover {
-  background: rgba(255, 71, 87, 0.15);
-  color: #ff5555;
-}
-</style>
+<style scoped src="../../styles/organisms/RightStagingPanel.css"></style>

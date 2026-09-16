@@ -75,11 +75,7 @@ async function handleCommit() {
         <Sparkles :size="16" class="sparkle-icon" />
         <span class="title">AI Commit Assistant</span>
       </div>
-      <button
-        @click="generateCommitMsg"
-        class="btn btn-ai btn-sm"
-        :disabled="isGenerating || stagedFilesCount === 0"
-      >
+      <button @click="generateCommitMsg" class="btn btn-ai btn-sm" :disabled="isGenerating || stagedFilesCount === 0">
         <RefreshCw v-if="isGenerating" :size="14" class="spinning" />
         <Sparkles v-else :size="14" />
         {{ isGenerating ? 'Analyzing Diff...' : 'Generate with AI' }}
@@ -87,12 +83,8 @@ async function handleCommit() {
     </div>
 
     <div class="card-body">
-      <textarea
-        v-model="commitMessage"
-        placeholder="Enter commit message or click 'Generate with AI'..."
-        rows="4"
-        class="commit-textarea"
-      ></textarea>
+      <textarea v-model="commitMessage" placeholder="Enter commit message or click 'Generate with AI'..." rows="4"
+        class="commit-textarea"></textarea>
 
       <div v-if="errorMessage" class="alert alert-danger">
         <AlertCircle :size="14" />
@@ -107,11 +99,8 @@ async function handleCommit() {
 
     <div class="card-footer">
       <span class="staged-info">{{ stagedFilesCount }} file(s) staged</span>
-      <button
-        @click="handleCommit"
-        class="btn btn-primary btn-sm"
-        :disabled="isCommitting || !commitMessage.trim() || stagedFilesCount === 0"
-      >
+      <button @click="handleCommit" class="btn btn-primary btn-sm"
+        :disabled="isCommitting || !commitMessage.trim() || stagedFilesCount === 0">
         <Send :size="14" />
         {{ isCommitting ? 'Committing...' : 'Commit Staged Changes' }}
       </button>
@@ -119,85 +108,4 @@ async function handleCommit() {
   </div>
 </template>
 
-<style scoped>
-.ai-commit-card {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  background: rgba(19, 24, 37, 0.95);
-  border: 1px solid rgba(168, 85, 247, 0.3);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.title-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.sparkle-icon {
-  color: #c084fc;
-}
-
-.commit-textarea {
-  width: 100%;
-  resize: vertical;
-  font-family: var(--font-sans);
-  font-size: 13px;
-  line-height: 1.5;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-}
-
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.staged-info {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.alert {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  margin-top: 8px;
-}
-
-.alert-danger {
-  background: rgba(248, 113, 113, 0.15);
-  color: var(--danger);
-  border: 1px solid rgba(248, 113, 113, 0.3);
-}
-
-.alert-success {
-  background: rgba(52, 211, 153, 0.15);
-  color: var(--success);
-  border: 1px solid rgba(52, 211, 153, 0.3);
-}
-
-.spinning {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  100% {
-    transform: rotate(360deg);
-  }
-}
-</style>
+<style scoped src="../../styles/organisms/AiCommitGenerator.css"></style>

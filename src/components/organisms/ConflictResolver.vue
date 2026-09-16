@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { AlertOctagon, Sparkles, RefreshCw, CheckCircle, FileCode, X } from '@lucide/vue';
+import BaseButton from '../atoms/BaseButton.vue';
 
 export interface ConflictFile {
   path: string;
@@ -96,13 +97,8 @@ onMounted(() => {
       </div>
 
       <div class="conflict-list">
-        <div
-          v-for="c in conflicts"
-          :key="c.path"
-          class="conflict-item"
-          :class="{ active: selectedConflict?.path === c.path }"
-          @click="selectedConflict = c"
-        >
+        <div v-for="c in conflicts" :key="c.path" class="conflict-item"
+          :class="{ active: selectedConflict?.path === c.path }" @click="selectedConflict = c">
           <FileCode :size="14" class="icon-warning" />
           <span class="file-path">{{ c.path }}</span>
         </div>
@@ -117,14 +113,14 @@ onMounted(() => {
       <div class="main-header" v-if="selectedConflict">
         <span class="file-title">{{ selectedConflict.path }}</span>
         <div class="header-actions">
-          <button @click="solveConflictWithAi" class="btn btn-ai btn-sm" :disabled="isSolving">
+          <BaseButton variant="ai" size="sm" @click="solveConflictWithAi" :disabled="isSolving">
             <RefreshCw v-if="isSolving" :size="14" class="spinning" />
             <Sparkles v-else :size="14" />
             {{ isSolving ? 'Solving...' : 'Ask AI to Resolve' }}
-          </button>
-          <button class="btn btn-secondary btn-xs" @click="emit('close')">
+          </BaseButton>
+          <BaseButton variant="secondary" size="xs" @click="emit('close')">
             <X :size="14" /> Back to Graph
-          </button>
+          </BaseButton>
         </div>
       </div>
 
@@ -137,20 +133,13 @@ onMounted(() => {
 
           <div class="view-box">
             <div class="box-title">AI Proposed Resolution</div>
-            <textarea
-              v-model="aiResolution"
-              placeholder="AI resolution will appear here, or edit manually..."
-              class="resolution-textarea"
-            ></textarea>
-            <button
-              v-if="aiResolution"
-              @click="applyResolution"
-              class="btn btn-primary btn-sm apply-btn"
-              :disabled="isApplying"
-            >
+            <textarea v-model="aiResolution" placeholder="AI resolution will appear here, or edit manually..."
+              class="resolution-textarea"></textarea>
+            <BaseButton v-if="aiResolution" variant="primary" size="sm" class="apply-btn" @click="applyResolution"
+              :disabled="isApplying">
               <CheckCircle :size="14" />
               {{ isApplying ? 'Applying...' : 'Apply & Stage Resolution' }}
-            </button>
+            </BaseButton>
           </div>
         </div>
 
@@ -162,188 +151,12 @@ onMounted(() => {
       <div class="empty-state" v-else>
         <AlertOctagon :size="48" class="icon-dim" />
         <p>No active merge conflict selected.</p>
-        <button class="btn btn-secondary btn-sm" @click="emit('close')">
+        <BaseButton variant="secondary" size="sm" @click="emit('close')">
           <X :size="14" /> Back to Graph
-        </button>
+        </BaseButton>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped>
-.conflict-container {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 16px;
-  height: 100%;
-  padding: 16px;
-}
-
-.conflict-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-}
-
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.header-title {
-  flex: 1;
-}
-
-.conflict-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  overflow-y: auto;
-}
-
-.conflict-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.conflict-item.active {
-  background: rgba(248, 113, 113, 0.15);
-  border: 1px solid rgba(248, 113, 113, 0.3);
-  color: var(--danger);
-}
-
-.no-conflicts {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 10px;
-  gap: 10px;
-  color: var(--text-muted);
-  text-align: center;
-  font-size: 13px;
-}
-
-.conflict-main {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.main-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.file-title {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.main-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  overflow: hidden;
-}
-
-.split-view {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  flex: 1;
-}
-
-.view-box {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-}
-
-.box-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.code-block {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.5;
-  color: #f87171;
-  overflow: auto;
-  white-space: pre-wrap;
-  flex: 1;
-}
-
-.resolution-textarea {
-  flex: 1;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.5;
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.apply-btn {
-  align-self: flex-end;
-}
-
-.status-banner {
-  padding: 8px 12px;
-  border-radius: 6px;
-  background: rgba(56, 189, 248, 0.15);
-  color: var(--primary);
-  font-size: 12px;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: 12px;
-  color: var(--text-dim);
-}
-
-.icon-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-.icon-btn:hover {
-  color: var(--text-main);
-}
-
-.btn-xs { padding: 3px 6px; font-size: 10px; }
-.spinning { animation: spin 1s linear infinite; }
-
-@keyframes spin { 100% { transform: rotate(360deg); } }
-</style>
+<style scoped src="../../styles/organisms/ConflictResolver.css"></style>

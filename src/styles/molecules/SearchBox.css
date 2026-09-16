@@ -1,0 +1,29 @@
+/* SearchBox.css */
+.search-box-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-box-input {
+  width: 100%;
+  font-size: 11px;
+  padding: 4px 24px 4px 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-main);
+  outline: none;
+}
+
+.search-box-input:focus {
+  border-color: var(--primary);
+}
+
+.search-box-icon {
+  position: absolute;
+  right: 8px;
+  color: var(--text-dim);
+  pointer-events: none;
+}

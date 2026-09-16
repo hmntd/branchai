@@ -5,8 +5,8 @@ import {
   GitPullRequest,
   GitBranch,
   CheckCircle2,
+  XCircle,
   Plus,
-  Search,
   MessageSquare,
   FileDiff,
   GitCommit as GitCommitIcon,
@@ -17,6 +17,10 @@ import {
   ChevronRight,
   ShieldCheck,
 } from '@lucide/vue';
+import SearchBox from '../molecules/SearchBox.vue';
+import BaseBadge from '../atoms/BaseBadge.vue';
+import BaseButton from '../atoms/BaseButton.vue';
+import BaseModal from '../atoms/BaseModal.vue';
 
 export interface PRReview {
   id: string;
@@ -72,6 +76,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void;
+  (e: 'refresh'): void;
 }>();
 
 // Real repo PRs array (no mock data)
@@ -95,10 +100,16 @@ const newCommentText = ref('');
 const reviewSummaryText = ref('');
 const selectedReviewState = ref<'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED'>('APPROVED');
 
-function saveLocalPrs() {
-  if (!props.repoPath) return;
-  const storageKey = `branchai_prs_${props.repoPath.trim()}`;
-  localStorage.setItem(storageKey, JSON.stringify(prs.value));
+async function saveLocalPrs() {
+  if (!props.repoPath || !props.repoPath.trim()) return;
+  try {
+    await invoke('save_repo_prs', {
+      repoPath: props.repoPath,
+      prsJson: JSON.stringify(prs.value),
+    });
+  } catch (e) {
+    console.error('Failed to save repo PRs to .git storage:', e);
+  }
 }
 
 async function loadRepoPullRequests() {
@@ -111,28 +122,29 @@ async function loadRepoPullRequests() {
   selectedPr.value = null;
   const loadedList: PullRequest[] = [];
 
-  // 1. Load saved PRs for this specific repo from localStorage
-  const storageKey = `branchai_prs_${props.repoPath.trim()}`;
+  // 1. Load saved repository PRs from .git/branchai_prs.json
   try {
-    const raw = localStorage.getItem(storageKey);
-    if (raw) {
-      const parsed: PullRequest[] = JSON.parse(raw);
+    const rawPrs: string = await invoke('get_repo_prs', { repoPath: props.repoPath });
+    if (rawPrs && rawPrs.trim()) {
+      const parsed: PullRequest[] = JSON.parse(rawPrs);
       loadedList.push(...parsed);
     }
   } catch (e) {
-    console.error('Failed to parse local stored PRs:', e);
+    console.error('Failed to parse repo stored PRs:', e);
   }
 
   // 2. Derive real PRs from Git branch differences in this repository
   try {
-    const remoteInfo: { owner?: string; repo_name?: string; default_branch: string } = await invoke('get_repo_remote_info', {
-      repoPath: props.repoPath,
-    });
+    const remoteInfo: { owner?: string; repo_name?: string; default_branch: string } = await invoke(
+      'get_repo_remote_info',
+      { repoPath: props.repoPath }
+    );
     const defaultBranch = remoteInfo.default_branch || 'main';
 
-    const branchList: Array<{ name: string; is_head: boolean; is_remote: boolean }> = await invoke('get_branches', {
-      repoPath: props.repoPath,
-    });
+    const branchList: Array<{ name: string; is_head: boolean; is_remote: boolean }> = await invoke(
+      'get_branches',
+      { repoPath: props.repoPath }
+    );
 
     const nonDefaultBranches = branchList.filter(
       (b) => !b.is_remote && b.name !== defaultBranch && b.name !== 'HEAD' && b.name !== 'master'
@@ -150,7 +162,6 @@ async function loadRepoPullRequests() {
           targetBranch: defaultBranch,
         });
 
-        // Only create a PR entry if there are commits or files on this branch
         if (diffSummary.commits.length > 0 || diffSummary.files.length > 0) {
           const topCommit = diffSummary.commits[0];
           const prId = 200 + i + 1;
@@ -158,7 +169,7 @@ async function loadRepoPullRequests() {
             loadedList.push({
               id: prId,
               title: topCommit ? topCommit.message : `Merge ${branch.name} into ${defaultBranch}`,
-              description: `Automated pull request for branch ${branch.name} containing ${diffSummary.commits.length} commit(s).`,
+              description: `Pull request for branch ${branch.name} containing ${diffSummary.commits.length} commit(s).`,
               author: topCommit ? topCommit.author : 'Repo Developer',
               status: 'open',
               sourceBranch: branch.name,
@@ -191,7 +202,9 @@ async function loadRepoPullRequests() {
     // 3. Fetch real GitHub PRs if remote origin is a GitHub repository
     if (remoteInfo.owner && remoteInfo.repo_name) {
       try {
-        const res = await fetch(`https://api.github.com/repos/${remoteInfo.owner}/${remoteInfo.repo_name}/pulls?state=all&per_page=20`);
+        const res = await fetch(
+          `https://api.github.com/repos/${remoteInfo.owner}/${remoteInfo.repo_name}/pulls?state=all&per_page=20`
+        );
         if (res.ok) {
           const ghPulls: any[] = await res.json();
           for (const gh of ghPulls) {
@@ -252,8 +265,54 @@ const openCount = computed(() => prs.value.filter((p) => p.status === 'open').le
 const mergedCount = computed(() => prs.value.filter((p) => p.status === 'merged').length);
 const closedCount = computed(() => prs.value.filter((p) => p.status === 'closed').length);
 
-function createPullRequest() {
-  if (!newPrTitle.value.trim()) return;
+async function createPullRequest() {
+  if (!newPrTitle.value.trim() || !props.repoPath) return;
+
+  const srcBranch = newPrSource.value.trim();
+  const targetBranch = newPrTarget.value.trim() || 'main';
+
+  // 1. Check if sourceBranch exists; if not, create real Git branch
+  try {
+    const branchList: Array<{ name: string }> = await invoke('get_branches', { repoPath: props.repoPath });
+    const exists = branchList.some((b) => b.name === srcBranch);
+    if (!exists) {
+      await invoke('create_new_branch', { repoPath: props.repoPath, branchName: srcBranch });
+    }
+  } catch (err) {
+    console.warn('Could not verify/create Git branch:', err);
+  }
+
+  // 2. Fetch real Git diff summary between source & target branch
+  let prCommits: PRCommit[] = [];
+  let prFiles: PRFile[] = [];
+
+  try {
+    const diffSummary: {
+      commits: Array<{ id: string; author: string; message: string; time: number }>;
+      files: Array<{ path: string; status: string }>;
+    } = await invoke('get_branch_diff_summary', {
+      repoPath: props.repoPath,
+      branchName: srcBranch,
+      targetBranch,
+    });
+
+    prCommits = diffSummary.commits.map((c) => ({
+      id: c.id,
+      shortId: c.id.substring(0, 7),
+      message: c.message,
+      author: c.author,
+      time: new Date(c.time * 1000).toLocaleString(),
+    }));
+
+    prFiles = diffSummary.files.map((f) => ({
+      path: f.path,
+      additions: f.status === 'new' ? 10 : 3,
+      deletions: f.status === 'deleted' ? 10 : 1,
+      diff: `@@ -1,5 +1,10 @@\n // Modified in ${srcBranch}\n ${f.path}`,
+    }));
+  } catch (e) {
+    console.error('Diff summary query error:', e);
+  }
 
   const newPr: PullRequest = {
     id: 300 + prs.value.length + 1,
@@ -261,22 +320,14 @@ function createPullRequest() {
     description: newPrDescription.value.trim() || 'No description provided.',
     author: 'You',
     status: 'open',
-    sourceBranch: newPrSource.value.trim(),
-    targetBranch: newPrTarget.value.trim(),
-    createdAt: 'Just now',
-    updatedAt: 'Just now',
+    sourceBranch: srcBranch,
+    targetBranch,
+    createdAt: new Date().toLocaleString(),
+    updatedAt: new Date().toLocaleString(),
     reviews: [],
     comments: [],
-    commits: [
-      {
-        id: 'a1b2c3d',
-        shortId: 'a1b2c3d',
-        message: newPrTitle.value.trim(),
-        author: 'You',
-        time: 'Just now',
-      },
-    ],
-    files: [],
+    commits: prCommits,
+    files: prFiles,
   };
 
   prs.value.unshift(newPr);
@@ -284,64 +335,80 @@ function createPullRequest() {
   showNewPrModal.value = false;
   newPrTitle.value = '';
   newPrDescription.value = '';
-  saveLocalPrs();
+  await saveLocalPrs();
+  emit('refresh');
 }
 
-function submitComment() {
+async function submitComment() {
   if (!newCommentText.value.trim() || !selectedPr.value) return;
   selectedPr.value.comments.push({
     id: `c_${Date.now()}`,
     author: 'You',
     text: newCommentText.value.trim(),
-    timestamp: 'Just now',
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   });
   newCommentText.value = '';
-  saveLocalPrs();
+  await saveLocalPrs();
 }
 
-function submitReview() {
+async function submitReview() {
   if (!selectedPr.value) return;
   selectedPr.value.reviews.push({
     id: `r_${Date.now()}`,
     author: 'You',
     state: selectedReviewState.value,
-    comment: reviewSummaryText.value.trim() || (selectedReviewState.value === 'APPROVED' ? 'Approved these changes.' : 'Requested changes.'),
-    timestamp: 'Just now',
+    comment:
+      reviewSummaryText.value.trim() ||
+      (selectedReviewState.value === 'APPROVED' ? 'Approved these changes.' : 'Requested changes.'),
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   });
   reviewSummaryText.value = '';
-  saveLocalPrs();
+  await saveLocalPrs();
 }
 
-function quickApprove() {
+async function quickApprove() {
   if (!selectedPr.value) return;
   selectedReviewState.value = 'APPROVED';
   reviewSummaryText.value = 'Approved changes.';
-  submitReview();
+  await submitReview();
 }
 
-function quickRequestChanges() {
+async function quickRequestChanges() {
   if (!selectedPr.value) return;
   selectedReviewState.value = 'CHANGES_REQUESTED';
   reviewSummaryText.value = 'Please review requested changes.';
-  submitReview();
+  await submitReview();
 }
 
-function mergePr() {
-  if (!selectedPr.value) return;
-  selectedPr.value.status = 'merged';
-  selectedPr.value.updatedAt = 'Just now';
-  saveLocalPrs();
+async function mergePr() {
+  if (!selectedPr.value || !props.repoPath) return;
+
+  try {
+    // Perform actual Git Merge in backend Rust service
+    await invoke('merge_branch', {
+      repoPath: props.repoPath,
+      sourceBranch: selectedPr.value.sourceBranch,
+      targetBranch: selectedPr.value.targetBranch,
+    });
+
+    selectedPr.value.status = 'merged';
+    selectedPr.value.updatedAt = new Date().toLocaleString();
+    await saveLocalPrs();
+    emit('refresh');
+  } catch (err: any) {
+    alert(`Git merge failed: ${typeof err === 'string' ? err : err.message || err}`);
+  }
 }
 
-function togglePrStatus() {
+async function togglePrStatus() {
   if (!selectedPr.value) return;
   if (selectedPr.value.status === 'open') {
     selectedPr.value.status = 'closed';
   } else if (selectedPr.value.status === 'closed') {
     selectedPr.value.status = 'open';
   }
-  selectedPr.value.updatedAt = 'Just now';
-  saveLocalPrs();
+  selectedPr.value.updatedAt = new Date().toLocaleString();
+  await saveLocalPrs();
 }
 </script>
 
@@ -352,16 +419,16 @@ function togglePrStatus() {
       <div class="header-title-box">
         <GitPullRequest :size="18" class="icon-primary" />
         <span class="title">PULL REQUESTS</span>
-        <span class="badge badge-branch">{{ openCount }} Open</span>
+        <BaseBadge variant="branch">{{ openCount }} Open</BaseBadge>
       </div>
 
       <div class="header-actions">
-        <button class="btn btn-primary btn-xs" @click="showNewPrModal = true">
+        <BaseButton variant="primary" size="xs" @click="showNewPrModal = true">
           <Plus :size="12" /> New Pull Request
-        </button>
-        <button class="btn btn-secondary btn-xs" @click="emit('close')">
+        </BaseButton>
+        <BaseButton variant="secondary" size="xs" @click="emit('close')">
           <ArrowLeft :size="12" /> Close View
-        </button>
+        </BaseButton>
       </div>
     </div>
 
@@ -385,10 +452,7 @@ function togglePrStatus() {
             </button>
           </div>
 
-          <div class="search-box">
-            <Search :size="12" class="search-icon" />
-            <input v-model="searchQuery" placeholder="Filter pull requests..." class="search-input" />
-          </div>
+          <SearchBox v-model="searchQuery" placeholder="Filter pull requests..." />
         </div>
 
         <div class="pr-list">
@@ -446,20 +510,17 @@ function togglePrStatus() {
         <div class="pr-detail-layout">
           <!-- PR Detail Header -->
           <div class="detail-header">
-            <button class="btn btn-secondary btn-xs back-btn" @click="selectedPr = null">
+            <BaseButton variant="secondary" size="xs" class="back-btn" @click="selectedPr = null">
               <ArrowLeft :size="12" /> Back to PR list
-            </button>
+            </BaseButton>
 
             <div class="detail-title-row">
               <h2 class="detail-title">{{ selectedPr.title }}</h2>
               <span class="detail-id">#{{ selectedPr.id }}</span>
-              <span class="badge" :class="{
-                'badge-staged': selectedPr.status === 'open',
-                'badge-purple': selectedPr.status === 'merged',
-                'badge-danger': selectedPr.status === 'closed',
-              }">
+              <BaseBadge
+                :variant="selectedPr.status === 'open' ? 'staged' : selectedPr.status === 'merged' ? 'purple' : 'danger'">
                 {{ selectedPr.status.toUpperCase() }}
-              </span>
+              </BaseBadge>
             </div>
 
             <div class="detail-branch-bar">
@@ -474,19 +535,19 @@ function togglePrStatus() {
 
             <!-- PR Action Toolbar -->
             <div class="detail-actions-bar">
-              <button v-if="selectedPr.status === 'open'" class="btn btn-primary btn-xs" @click="quickApprove">
+              <BaseButton v-if="selectedPr.status === 'open'" variant="primary" size="xs" @click="quickApprove">
                 <Check :size="12" /> Approve PR
-              </button>
-              <button v-if="selectedPr.status === 'open'" class="btn btn-secondary btn-xs text-warning"
+              </BaseButton>
+              <BaseButton v-if="selectedPr.status === 'open'" variant="secondary" size="xs" class="text-warning"
                 @click="quickRequestChanges">
                 <AlertTriangle :size="12" /> Request Changes
-              </button>
-              <button v-if="selectedPr.status === 'open'" class="btn btn-ai btn-xs" @click="mergePr">
+              </BaseButton>
+              <BaseButton v-if="selectedPr.status === 'open'" variant="ai" size="xs" @click="mergePr">
                 <GitPullRequest :size="12" /> Merge Pull Request
-              </button>
-              <button class="btn btn-secondary btn-xs" @click="togglePrStatus">
+              </BaseButton>
+              <BaseButton variant="secondary" size="xs" @click="togglePrStatus">
                 {{ selectedPr.status === 'open' ? 'Close PR' : 'Reopen PR' }}
-              </button>
+              </BaseButton>
             </div>
 
             <!-- Detail Tabs -->
@@ -550,9 +611,9 @@ function togglePrStatus() {
                 <textarea v-model="newCommentText" placeholder="Write a comment..." rows="3"
                   class="comment-textarea"></textarea>
                 <div class="comment-actions">
-                  <button class="btn btn-primary btn-xs" @click="submitComment" :disabled="!newCommentText.trim()">
+                  <BaseButton variant="primary" size="xs" @click="submitComment" :disabled="!newCommentText.trim()">
                     <Send :size="11" /> Comment
-                  </button>
+                  </BaseButton>
                 </div>
               </div>
             </div>
@@ -568,7 +629,7 @@ function togglePrStatus() {
                     <option value="COMMENTED">💬 Comment Only</option>
                   </select>
                   <input v-model="reviewSummaryText" placeholder="Review summary comment..." class="review-input" />
-                  <button class="btn btn-primary btn-xs" @click="submitReview">Submit Review</button>
+                  <BaseButton variant="primary" size="xs" @click="submitReview">Submit Review</BaseButton>
                 </div>
               </div>
 
@@ -609,679 +670,42 @@ function togglePrStatus() {
       </template>
     </div>
 
-    <!-- Create New PR Modal -->
-    <div v-if="showNewPrModal" class="modal-overlay" @click.self="showNewPrModal = false">
-      <div class="new-pr-modal gk-panel">
-        <div class="modal-header">
-          <GitPullRequest :size="15" class="icon-primary" />
-          <span class="title">Create New Pull Request</span>
-          <button class="icon-btn" @click="showNewPrModal = false">✕</button>
+    <!-- Create New PR Modal Atom -->
+    <BaseModal v-if="showNewPrModal" title="Create New Pull Request" @close="showNewPrModal = false">
+      <template #header-icon>
+        <GitPullRequest :size="15" class="icon-primary" />
+      </template>
+
+      <div class="form-group">
+        <label>Title</label>
+        <input v-model="newPrTitle" placeholder="e.g. Feature: Add dark mode toggle" class="form-input" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Source Branch</label>
+          <input v-model="newPrSource" placeholder="feature/..." class="form-input" />
         </div>
-
-        <div class="modal-body">
-          <div class="form-group">
-            <label>Title</label>
-            <input v-model="newPrTitle" placeholder="e.g. Feature: Add dark mode toggle" class="form-input" />
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Source Branch</label>
-              <input v-model="newPrSource" placeholder="feature/..." class="form-input" />
-            </div>
-            <div class="form-group">
-              <label>Target Branch</label>
-              <input v-model="newPrTarget" placeholder="main" class="form-input" />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Description</label>
-            <textarea v-model="newPrDescription" placeholder="Describe the changes..." rows="4"
-              class="form-textarea"></textarea>
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button class="btn btn-secondary btn-xs" @click="showNewPrModal = false">Cancel</button>
-          <button class="btn btn-primary btn-xs" @click="createPullRequest" :disabled="!newPrTitle.trim()">
-            Create Pull Request
-          </button>
+        <div class="form-group">
+          <label>Target Branch</label>
+          <input v-model="newPrTarget" placeholder="main" class="form-input" />
         </div>
       </div>
-    </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <textarea v-model="newPrDescription" placeholder="Describe the changes..." rows="4"
+          class="form-textarea"></textarea>
+      </div>
+
+      <template #footer>
+        <BaseButton variant="secondary" size="xs" @click="showNewPrModal = false">Cancel</BaseButton>
+        <BaseButton variant="primary" size="xs" @click="createPullRequest" :disabled="!newPrTitle.trim()">
+          Create Pull Request
+        </BaseButton>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
-<style scoped>
-.pr-workspace {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-  background: var(--bg-dark);
-  border-radius: 0;
-  border: none;
-  overflow: hidden;
-}
-
-.pr-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  background: #121417;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.header-title-box {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.pr-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 14px;
-}
-
-.pr-filter-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-  gap: 12px;
-}
-
-.status-tabs {
-  display: flex;
-  gap: 4px;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 3px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-}
-
-.status-tab {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 11px;
-  padding: 4px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.15s ease;
-}
-
-.status-tab.active {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-main);
-  font-weight: 600;
-}
-
-.tab-count {
-  font-size: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 1px 5px;
-  border-radius: 8px;
-}
-
-.search-box {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 260px;
-}
-
-.search-input {
-  width: 100%;
-  padding-left: 28px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 8px;
-  color: var(--text-dim);
-}
-
-.pr-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.pr-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 14px;
-  cursor: pointer;
-}
-
-.pr-card-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.pr-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.pr-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.pr-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.pr-number {
-  font-size: 12px;
-  font-family: var(--font-mono);
-  color: var(--text-dim);
-}
-
-.pr-meta-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.branch-flow code {
-  font-family: var(--font-mono);
-  background: rgba(0, 0, 0, 0.3);
-  padding: 1px 5px;
-  border-radius: 3px;
-  color: var(--primary);
-}
-
-.dot {
-  color: var(--text-dim);
-}
-
-.pr-card-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.review-badge {
-  font-size: 10px;
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-weight: 600;
-}
-
-.review-badge.approved {
-  background: rgba(46, 213, 115, 0.15);
-  color: var(--success);
-}
-
-.review-badge.changes {
-  background: rgba(255, 165, 2, 0.15);
-  color: var(--warning);
-}
-
-.review-badge.pending {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-dim);
-}
-
-.comment-count {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--text-dim);
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 40px;
-  color: var(--text-dim);
-  font-size: 12px;
-}
-
-/* PR Detail Layout */
-.pr-detail-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.detail-header {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: #181a1f;
-  padding: 12px 16px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-}
-
-.back-btn {
-  align-self: flex-start;
-}
-
-.detail-title-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.detail-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-main);
-}
-
-.detail-id {
-  font-size: 14px;
-  font-family: var(--font-mono);
-  color: var(--text-dim);
-}
-
-.detail-branch-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.detail-branch-bar code {
-  font-family: var(--font-mono);
-  color: var(--primary);
-}
-
-.detail-actions-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-top: 4px;
-}
-
-.detail-nav-tabs {
-  display: flex;
-  gap: 8px;
-  border-top: 1px solid var(--border-color);
-  padding-top: 10px;
-}
-
-.detail-tab {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 12px;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.detail-tab.active {
-  background: rgba(0, 210, 211, 0.15);
-  color: var(--primary);
-  font-weight: 600;
-}
-
-.detail-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.description-card {
-  padding: 12px;
-}
-
-.card-header-sm {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text-dim);
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
-}
-
-.card-text {
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--text-main);
-}
-
-.reviews-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.section-title {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text-dim);
-}
-
-.review-card {
-  padding: 10px;
-}
-
-.review-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-}
-
-.reviewer-name {
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.review-state {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 3px;
-}
-
-.review-state.approved {
-  background: rgba(46, 213, 115, 0.2);
-  color: var(--success);
-}
-
-.review-state.changes_requested {
-  background: rgba(255, 165, 2, 0.2);
-  color: var(--warning);
-}
-
-.review-comment {
-  font-size: 12px;
-  margin-top: 4px;
-  color: var(--text-muted);
-}
-
-.comments-timeline {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.comment-card {
-  padding: 10px;
-}
-
-.comment-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 11px;
-  color: var(--text-dim);
-  margin-bottom: 4px;
-}
-
-.comment-author {
-  font-weight: 600;
-  color: var(--primary);
-}
-
-.comment-body {
-  font-size: 12px;
-  color: var(--text-main);
-}
-
-.empty-comments {
-  font-size: 11px;
-  color: var(--text-dim);
-  font-style: italic;
-}
-
-.add-comment-box {
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.comment-textarea {
-  width: 100%;
-  resize: none;
-  font-size: 12px;
-}
-
-.comment-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-/* Files Tab */
-.tab-files {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.review-form-card {
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.review-form-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.review-select {
-  width: 150px;
-  font-size: 11px;
-}
-
-.review-input {
-  flex: 1;
-  font-size: 11px;
-}
-
-.file-diff-card {
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.file-diff-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  font-family: var(--font-mono);
-}
-
-.file-diff-path {
-  color: var(--text-main);
-  font-weight: 600;
-}
-
-.file-diff-stats {
-  display: flex;
-  gap: 8px;
-  font-size: 11px;
-}
-
-/* Commits Tab */
-.tab-commits {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.commit-row-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-}
-
-.commit-details {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.commit-msg {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.commit-author-meta {
-  font-size: 10px;
-  color: var(--text-dim);
-}
-
-.commit-sha code {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--primary);
-}
-
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.new-pr-modal {
-  width: 500px;
-  background: var(--bg-panel);
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border-color);
-  font-weight: 600;
-  font-size: 13px;
-}
-
-.modal-header .title {
-  flex: 1;
-}
-
-.modal-body {
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.form-group label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.form-row {
-  display: flex;
-  gap: 10px;
-}
-
-.form-row .form-group {
-  flex: 1;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 10px 14px;
-  border-top: 1px solid var(--border-color);
-  background: #181a1f;
-}
-
-.icon-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.badge-purple {
-  background: rgba(156, 136, 255, 0.18);
-  color: #9c88ff;
-  border: 1px solid rgba(156, 136, 255, 0.4);
-}
-
-.badge-danger {
-  background: rgba(255, 71, 87, 0.18);
-  color: #ff4757;
-  border: 1px solid rgba(255, 71, 87, 0.4);
-}
-
-.text-success {
-  color: var(--success);
-}
-
-.text-danger {
-  color: var(--danger);
-}
-
-.text-warning {
-  color: var(--warning);
-}
-
-.icon-purple {
-  color: #9c88ff;
-}
-
-.btn-xs {
-  padding: 4px 8px;
-  font-size: 11px;
-}
-</style>
+<style scoped src="../../styles/organisms/PullRequestsView.css"></style>

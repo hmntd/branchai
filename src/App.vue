@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
-import TopBar from './components/TopBar.vue';
-import LeftSidebar from './components/LeftSidebar.vue';
-import BranchGraph, { GraphNode } from './components/BranchGraph.vue';
-import RightStagingPanel, { FileStatus } from './components/RightStagingPanel.vue';
-import AiCodeReview from './components/AiCodeReview.vue';
-import ConflictResolver from './components/ConflictResolver.vue';
-import PullRequestsView from './components/PullRequestsView.vue';
-import IssuesView from './components/IssuesView.vue';
-import SettingsModal, { AppConfig } from './components/SettingsModal.vue';
-import TerminalDrawer from './components/TerminalDrawer.vue';
-import WelcomeScreen from './components/WelcomeScreen.vue';
+import TopBar from './components/organisms/TopBar.vue';
+import LeftSidebar from './components/organisms/LeftSidebar.vue';
+import BranchGraph, { GraphNode } from './components/organisms/BranchGraph.vue';
+import RightStagingPanel, { FileStatus } from './components/organisms/RightStagingPanel.vue';
+import AiCodeReview from './components/organisms/AiCodeReview.vue';
+import ConflictResolver from './components/organisms/ConflictResolver.vue';
+import PullRequestsView from './components/organisms/PullRequestsView.vue';
+import IssuesView from './components/organisms/IssuesView.vue';
+import SettingsModal, { AppConfig } from './components/organisms/SettingsModal.vue';
+import TerminalDrawer from './components/organisms/TerminalDrawer.vue';
+import WelcomeScreen from './components/organisms/WelcomeScreen.vue';
 
 type Tab = 'graph' | 'review' | 'conflicts' | 'pull_requests' | 'issues';
 
@@ -209,7 +209,7 @@ onMounted(async () => {
           <ConflictResolver v-else-if="activeTab === 'conflicts'" :repo-path="repoPath" @resolved="refreshRepo"
             @close="activeTab = 'graph'" />
           <PullRequestsView v-else-if="activeTab === 'pull_requests'" :repo-path="repoPath" :branches="branches"
-            :current-branch="currentBranch" @close="activeTab = 'graph'" />
+            :current-branch="currentBranch" @refresh="refreshRepo" @close="activeTab = 'graph'" />
           <IssuesView v-else-if="activeTab === 'issues'" :repo-path="repoPath" @close="activeTab = 'graph'" />
 
           <!-- Embedded Terminal Drawer -->

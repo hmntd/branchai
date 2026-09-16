@@ -1,0 +1,41 @@
+/* BaseBadge.css */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  user-select: none;
+}
+
+.badge-branch {
+  background: rgba(0, 210, 211, 0.18);
+  color: #00d2d3;
+  border: 1px solid rgba(0, 210, 211, 0.4);
+}
+
+.badge-staged {
+  background: rgba(46, 213, 115, 0.18);
+  color: #2ed573;
+  border: 1px solid rgba(46, 213, 115, 0.4);
+}
+
+.badge-modified {
+  background: rgba(255, 165, 2, 0.18);
+  color: #ffa502;
+  border: 1px solid rgba(255, 165, 2, 0.4);
+}
+
+.badge-danger {
+  background: rgba(255, 71, 87, 0.18);
+  color: #ff4757;
+  border: 1px solid rgba(255, 71, 87, 0.4);
+}
+
+.badge-purple {
+  background: rgba(156, 136, 255, 0.18);
+  color: #9c88ff;
+  border: 1px solid rgba(156, 136, 255, 0.4);
+}

@@ -1,0 +1,87 @@
+.tree-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.tree-folder-row:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-main);
+}
+
+.tree-chevron {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.tree-folder-icon {
+  flex-shrink: 0;
+  color: #f0c040;
+}
+
+.tree-name {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.tree-file-row {
+  /* inherits .file-row from parent scope, just adjusts text */
+}
+
+.tree-file-name {
+  /* show only filename, not full path */
+}
+
+/* Shared with parent — imported via non-scoped globals */
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.file-row:hover {
+  background: var(--bg-card-hover);
+}
+
+.status-prefix {
+  font-weight: 700;
+  width: 10px;
+  flex-shrink: 0;
+}
+
+.file-path {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-main);
+}
+
+.stage-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.stage-btn:hover {
+  color: var(--text-main);
+}
+
+.text-success { color: var(--success); }
+.text-danger  { color: var(--danger); }
+.text-warning { color: var(--warning); }

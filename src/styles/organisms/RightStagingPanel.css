@@ -1,0 +1,277 @@
+/* RightStagingPanel.css */
+.right-staging-panel {
+  width: 310px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-sidebar);
+  border-radius: 0;
+  border-left: 1px solid var(--border-color);
+  user-select: none;
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-color);
+  background: #121417;
+}
+
+.changes-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.view-toggles {
+  display: flex;
+  gap: 3px;
+}
+
+.files-container {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+}
+
+.accordion-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.acc-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.acc-title {
+  flex: 1;
+}
+
+.stage-all-btn {
+  background: #2ed573;
+  color: #0d1117;
+  font-weight: 700;
+}
+
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 8px;
+}
+
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.file-row:hover {
+  background: var(--bg-card-hover);
+}
+
+.status-prefix {
+  font-weight: 700;
+  width: 10px;
+}
+
+.file-path {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-main);
+}
+
+.stage-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.stage-btn:hover {
+  color: var(--text-main);
+}
+
+.empty-list {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+  padding: 4px 6px;
+}
+
+/* Commit Box */
+.commit-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: #181a1f;
+  border-radius: 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.commit-box-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.commit-details-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.commit-msg-preview {
+  font-size: 11px;
+  color: var(--text-main);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.commit-author-tag {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.inputs-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.summary-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.summary-input {
+  width: 100%;
+  font-size: 11px;
+  padding: 5px 30px 5px 8px;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.char-count {
+  position: absolute;
+  right: 8px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+}
+
+.desc-textarea {
+  font-size: 11px;
+  padding: 5px 8px;
+  background: rgba(0, 0, 0, 0.4);
+  resize: none;
+}
+
+.actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.btn-full {
+  width: 100%;
+  justify-content: center;
+  padding: 7px;
+}
+
+.stage-commit-btn {
+  background: #2ed573;
+  color: #0d1117;
+  font-weight: 700;
+}
+
+.status-alert {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  padding: 5px 8px;
+  border-radius: 3px;
+}
+
+.alert-danger {
+  background: rgba(255, 71, 87, 0.15);
+  color: var(--danger);
+}
+
+.alert-success {
+  background: rgba(46, 213, 115, 0.15);
+  color: var(--success);
+}
+
+.diff-modal {
+  width: 680px;
+  height: 480px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+.text-success { color: var(--success); }
+.text-danger { color: var(--danger); }
+.text-warning { color: var(--warning); }
+.btn-xs { padding: 3px 6px; font-size: 10px; }
+.spinning { animation: spin 1s linear infinite; }
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 71, 87, 0.15);
+  color: #ff5555;
+}

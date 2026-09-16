@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import { GitCommit, Calendar, GitBranch, Copy, Check } from '@lucide/vue';
+import BaseBadge from '../atoms/BaseBadge.vue';
+import BaseButton from '../atoms/BaseButton.vue';
 
 export interface GraphNode {
   id: string;
@@ -242,12 +244,7 @@ watch([() => props.nodes, () => props.hasChanges], () => {
 
         <div class="rows-layer">
           <!-- Clickable WIP Row -->
-          <div
-            v-if="hasChanges"
-            class="graph-row wip-row"
-            :class="{ active: isWipSelected }"
-            @click="selectWip"
-          >
+          <div v-if="hasChanges" class="graph-row wip-row" :class="{ active: isWipSelected }" @click="selectWip">
             <div class="col col-branch">
               <span class="badge badge-wip">// WIP</span>
             </div>
@@ -268,26 +265,15 @@ watch([() => props.nodes, () => props.hasChanges], () => {
           </div>
 
           <!-- Commit Rows with Hover & Selection Branch Display near Avatar -->
-          <div
-            v-for="node in nodes"
-            :key="node.id"
-            class="graph-row"
+          <div v-for="node in nodes" :key="node.id" class="graph-row"
             :class="{ active: selectedNode?.id === node.id && !isWipSelected, 'is-head': node.is_head }"
-            @click="selectCommit(node)"
-            @dblclick="handleDblClickNode(node)"
-            @mouseenter="hoveredNode = node"
-            @mouseleave="hoveredNode = null"
-          >
+            @click="selectCommit(node)" @dblclick="handleDblClickNode(node)" @mouseenter="hoveredNode = node"
+            @mouseleave="hoveredNode = null">
             <div class="col col-branch">
-              <span
-                v-for="b in node.branches"
-                :key="b"
-                class="badge badge-branch clickable"
-                @dblclick.stop="emit('checkoutBranch', b)"
-                title="Double click to switch to branch"
-              >
+              <BaseBadge v-for="b in node.branches" :key="b" variant="branch" class="clickable"
+                @dblclick.stop="emit('checkoutBranch', b)" title="Double click to switch to branch">
                 <GitBranch :size="10" /> {{ b }}
-              </span>
+              </BaseBadge>
             </div>
             <div class="col col-graph"></div>
             <div class="col col-message">
@@ -298,7 +284,8 @@ watch([() => props.nodes, () => props.hasChanges], () => {
                   <GitBranch :size="11" />
                   <span>Branch: <strong>{{ getBranchName(node) }}</strong></span>
                 </div>
-                <div class="tooltip-hash">Commit {{ node.short_id }} by {{ node.author }} (double click to checkout)</div>
+                <div class="tooltip-hash">Commit {{ node.short_id }} by {{ node.author }} (double click to checkout)
+                </div>
               </div>
             </div>
             <div class="col col-author">
@@ -306,12 +293,9 @@ watch([() => props.nodes, () => props.hasChanges], () => {
                 <span class="initials">{{ getAuthorInitials(node.author) }}</span>
               </div>
               <span class="author-name" :title="node.author">{{ node.author }}</span>
-              <span
-                class="avatar-branch-badge clickable"
+              <span class="avatar-branch-badge clickable"
                 :class="{ 'is-active': hoveredNode?.id === node.id || selectedNode?.id === node.id }"
-                @dblclick.stop="handleDblClickNode(node)"
-                title="Double click to switch to branch"
-              >
+                @dblclick.stop="handleDblClickNode(node)" title="Double click to switch to branch">
                 <GitBranch :size="9" />
                 <span>{{ getBranchName(node) }}</span>
               </span>
@@ -331,10 +315,10 @@ watch([() => props.nodes, () => props.hasChanges], () => {
       <div class="inspector-header" v-else-if="selectedNode">
         <GitCommit :size="16" class="icon-primary" />
         <span class="title">Commit {{ selectedNode.short_id }}</span>
-        <button class="btn btn-secondary btn-xs" @click="copyHash(selectedNode.id)">
+        <BaseButton variant="secondary" size="xs" @click="copyHash(selectedNode.id)">
           <Check v-if="copied" :size="12" class="icon-success" />
           <Copy v-else :size="12" />
-        </button>
+        </BaseButton>
       </div>
 
       <div class="inspector-body" v-if="isWipSelected">
@@ -376,313 +360,4 @@ watch([() => props.nodes, () => props.hasChanges], () => {
   </div>
 </template>
 
-<style scoped>
-.graph-table-layout {
-  display: flex;
-  flex: 1;
-  height: 100%;
-  overflow: hidden;
-  position: relative;
-}
-
-.graph-table-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  border-radius: 0;
-  border: none;
-  background: var(--bg-dark);
-  overflow: hidden;
-}
-
-.table-header {
-  display: flex;
-  align-items: center;
-  height: 30px;
-  background: #121417;
-  border-bottom: 1px solid var(--border-color);
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text-dim);
-  letter-spacing: 0.5px;
-  padding: 0 10px;
-}
-
-.col {
-  display: flex;
-  align-items: center;
-}
-
-.col-branch {
-  width: 180px;
-  display: flex;
-  gap: 4px;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.col-graph {
-  width: 120px;
-  flex-shrink: 0;
-}
-
-.col-message {
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-}
-
-.col-author {
-  width: 180px;
-  color: var(--text-muted);
-  font-size: 11px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  overflow: hidden;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.author-badge {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 8px;
-  flex-shrink: 0;
-}
-
-.author-name {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 11px;
-  color: var(--text-main);
-  max-width: 85px;
-  flex-shrink: 1;
-}
-
-.avatar-branch-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 9px;
-  font-weight: 600;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-dim);
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: all 0.15s ease;
-}
-
-.graph-row:hover .avatar-branch-badge,
-.graph-row.active .avatar-branch-badge,
-.avatar-branch-badge.is-active {
-  background: rgba(0, 210, 211, 0.2);
-  border-color: rgba(0, 210, 211, 0.4);
-  color: #00d2d3;
-}
-
-.col-hash {
-  width: 75px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--primary);
-  flex-shrink: 0;
-}
-
-.table-body {
-  position: relative;
-  flex: 1;
-  overflow-y: auto;
-}
-
-.canvas-layer {
-  position: absolute;
-  top: 0;
-  left: 190px;
-  width: 120px;
-  height: 100%;
-  pointer-events: none;
-  z-index: 10;
-}
-
-.rows-layer {
-  display: flex;
-  flex-direction: column;
-}
-
-.graph-row {
-  display: flex;
-  align-items: center;
-  height: 36px;
-  padding: 0 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-  cursor: pointer;
-  font-size: 12px;
-  transition: background 0.15s;
-  position: relative;
-}
-
-.graph-row:hover {
-  background: var(--bg-card-hover);
-}
-
-.graph-row.active {
-  background: rgba(0, 210, 211, 0.15) !important;
-  border-left: 3px solid var(--primary);
-}
-
-.hover-tooltip {
-  position: absolute;
-  left: 10px;
-  top: -30px;
-  background: #181a1f;
-  border: 1px solid var(--primary);
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 10px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  pointer-events: none;
-}
-
-.tooltip-branch {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--primary);
-}
-
-.tooltip-hash {
-  color: var(--text-muted);
-}
-
-.wip-row {
-  background: rgba(0, 210, 211, 0.06);
-}
-
-.badge-wip {
-  background: rgba(0, 210, 211, 0.2);
-  color: #00d2d3;
-  border: 1px solid rgba(0, 210, 211, 0.4);
-  font-weight: 700;
-}
-
-.wip-msg-cell {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.wip-title {
-  color: #00d2d3;
-  font-weight: 600;
-}
-
-.wip-stats-pill {
-  font-size: 10px;
-  font-family: var(--font-mono);
-  background: rgba(0, 0, 0, 0.4);
-  padding: 2px 7px;
-  border-radius: 10px;
-  color: var(--text-muted);
-  border: 1px solid var(--border-color);
-}
-
-.msg {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.commit-inspector {
-  width: 280px;
-  border-radius: 0;
-  border-left: 1px solid var(--border-color);
-  background: var(--bg-sidebar);
-  display: flex;
-  flex-direction: column;
-}
-
-.inspector-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border-color);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.inspector-body {
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.inspector-branch-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  background: rgba(0, 210, 211, 0.15);
-  border: 1px solid rgba(0, 210, 211, 0.3);
-  color: var(--primary);
-  font-size: 11px;
-}
-
-.msg-box {
-  background: rgba(0, 0, 0, 0.4);
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.wip-box {
-  border-color: rgba(0, 210, 211, 0.3);
-  color: var(--text-main);
-}
-
-.meta-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.parents-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--text-dim);
-}
-
-.parent-tag {
-  font-family: var(--font-mono);
-  background: rgba(255, 255, 255, 0.05);
-  padding: 1px 5px;
-  border-radius: 3px;
-  color: var(--secondary);
-}
-
-.btn-xs { padding: 2px 6px; font-size: 11px; }
-</style>
+<style scoped src="../../styles/organisms/BranchGraph.css"></style>

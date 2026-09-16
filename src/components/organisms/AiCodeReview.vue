@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { ShieldCheck, Bug, Zap, Sparkles, RefreshCw, AlertTriangle, FileCode, X } from '@lucide/vue';
+import BaseButton from '../atoms/BaseButton.vue';
 
 const props = defineProps<{
   repoPath: string;
@@ -49,7 +50,8 @@ async function runCodeReview() {
         </button>
       </div>
       <p class="sidebar-desc">
-        Automatically inspect your Git diffs before pushing. The AI analyzes potential bugs, security flaws, performance optimizations, and code style.
+        Automatically inspect your Git diffs before pushing. The AI analyzes potential bugs, security flaws, performance
+        optimizations, and code style.
       </p>
 
       <div class="categories">
@@ -71,20 +73,20 @@ async function runCodeReview() {
         </div>
       </div>
 
-      <button @click="runCodeReview" class="btn btn-ai btn-full" :disabled="isAnalyzing">
+      <BaseButton variant="ai" class="btn-full" @click="runCodeReview" :disabled="isAnalyzing">
         <RefreshCw v-if="isAnalyzing" :size="16" class="spinning" />
         <Sparkles v-else :size="16" />
         {{ isAnalyzing ? 'Running Analysis...' : 'Run Automated AI Review' }}
-      </button>
+      </BaseButton>
     </div>
 
     <div class="review-main glass-panel">
       <div class="main-header">
         <Sparkles :size="18" class="icon-purple" />
         <span class="title">Review Findings & Suggestions</span>
-        <button class="btn btn-secondary btn-xs" @click="emit('close')">
+        <BaseButton variant="secondary" size="xs" @click="emit('close')">
           <X :size="14" /> Back to Graph
-        </button>
+        </BaseButton>
       </div>
 
       <div class="main-body">
@@ -104,134 +106,12 @@ async function runCodeReview() {
 
         <div v-else class="empty-state">
           <ShieldCheck :size="48" class="icon-dim" />
-          <p>Click <strong>"Run Automated AI Review"</strong> to trigger an AI analysis on your current staged changes.</p>
+          <p>Click <strong>"Run Automated AI Review"</strong> to trigger an AI analysis on your current staged changes.
+          </p>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped>
-.review-container {
-  display: grid;
-  grid-template-columns: 340px 1fr;
-  gap: 16px;
-  height: 100%;
-  padding: 16px;
-}
-
-.review-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-}
-
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.header-title {
-  flex: 1;
-}
-
-.sidebar-desc {
-  font-size: 13px;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-.categories {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 10px 0;
-}
-
-.category-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.03);
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-}
-
-.btn-full {
-  width: 100%;
-  justify-content: center;
-  margin-top: auto;
-}
-
-.review-main {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.main-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--border-color);
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.main-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-}
-
-.loading-box, .error-box, .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: 12px;
-  color: var(--text-muted);
-  text-align: center;
-}
-
-.formatted-output {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  font-family: var(--font-sans);
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--text-main);
-}
-
-.icon-purple {
-  color: #c084fc;
-}
-
-.icon-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-.icon-btn:hover {
-  color: var(--text-main);
-}
-
-.spinning {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  100% {
-    transform: rotate(360deg);
-  }
-}
-</style>
+<style scoped src="../../styles/organisms/AiCodeReview.css"></style>

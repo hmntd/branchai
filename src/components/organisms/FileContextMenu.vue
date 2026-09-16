@@ -36,7 +36,6 @@ const emit = defineEmits<{
   (e: 'refresh'): void;
 }>();
 
-// ── State ──────────────────────────────────────────────────
 const menuEl = ref<HTMLElement | null>(null);
 const adjustedX = ref(props.x);
 const adjustedY = ref(props.y);
@@ -52,26 +51,22 @@ function showToast(msg: string, isError = false) {
   toastTimer = setTimeout(() => (toast.value = ''), 3000);
 }
 
-// ── Position adjustment: runs every time the menu becomes visible ───────────
-// We watch `visible` so that by the time we measure, the v-if div is in the DOM.
 watch(
   () => props.visible,
   async (isVisible) => {
     if (!isVisible) return;
-    // Set raw position first so the element renders somewhere before measuring
     adjustedX.value = props.x;
     adjustedY.value = props.y;
-    await nextTick(); // wait for v-if to put the div in DOM
+    await nextTick();
     if (!menuEl.value) return;
     const rect = menuEl.value.getBoundingClientRect();
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    adjustedX.value = props.x + rect.width  > vw ? vw - rect.width  - 8 : props.x;
+    adjustedX.value = props.x + rect.width > vw ? vw - rect.width - 8 : props.x;
     adjustedY.value = props.y + rect.height > vh ? vh - rect.height - 8 : props.y;
   }
 );
 
-// ── Click-outside to close ─────────────────────────────────
 function onOutsideClick(e: MouseEvent) {
   if (menuEl.value && !menuEl.value.contains(e.target as Node)) {
     emit('close');
@@ -83,7 +78,6 @@ onUnmounted(() => {
   if (toastTimer) clearTimeout(toastTimer);
 });
 
-// ── Helpers ────────────────────────────────────────────────
 function close() {
   emit('close');
 }
@@ -91,8 +85,6 @@ function close() {
 function fullPath(): string {
   return `${props.repoPath}/${props.file?.path}`;
 }
-
-// ── Actions ────────────────────────────────────────────────
 
 async function stageFile() {
   if (!props.file) return;
@@ -130,7 +122,6 @@ async function stashFile() {
   close();
 }
 
-// ── Modals ─────────────────────────────────────────────────
 const showHistoryModal = ref(false);
 const historyEntries = ref<{ id: string; author: string; message: string; time: number }[]>([]);
 const historyLoading = ref(false);
@@ -286,22 +277,17 @@ async function savePatchToFile() {
 </script>
 
 <template>
-  <!-- ── Toast (global, shown even after menu closes) ── -->
+  <!-- Toast -->
   <Teleport to="body">
     <div v-if="toast" class="ctx-toast" :class="toastError ? 'ctx-toast--error' : 'ctx-toast--ok'">
       {{ toast }}
     </div>
   </Teleport>
 
-  <!-- ── Context Menu ─────────────────────────────────── -->
+  <!-- Context Menu -->
   <Teleport to="body">
-    <div
-      v-if="visible && file"
-      ref="menuEl"
-      class="ctx-menu"
-      :style="{ left: adjustedX + 'px', top: adjustedY + 'px' }"
-      @contextmenu.prevent
-    >
+    <div v-if="visible && file" ref="menuEl" class="ctx-menu" :style="{ left: adjustedX + 'px', top: adjustedY + 'px' }"
+      @contextmenu.prevent>
       <div class="ctx-file-name">{{ file.path }}</div>
 
       <!-- Group 1: Stage / Discard / Stash -->
@@ -376,7 +362,7 @@ async function savePatchToFile() {
     </div>
   </Teleport>
 
-  <!-- ── File History Modal ───────────────────────────── -->
+  <!-- File History Modal -->
   <Teleport to="body">
     <div v-if="showHistoryModal" class="ctx-modal-overlay" @click.self="showHistoryModal = false">
       <div class="ctx-modal">
@@ -400,7 +386,7 @@ async function savePatchToFile() {
     </div>
   </Teleport>
 
-  <!-- ── File Blame Modal ─────────────────────────────── -->
+  <!-- File Blame Modal -->
   <Teleport to="body">
     <div v-if="showBlameModal" class="ctx-modal-overlay" @click.self="showBlameModal = false">
       <div class="ctx-modal ctx-modal--wide">
@@ -425,7 +411,7 @@ async function savePatchToFile() {
     </div>
   </Teleport>
 
-  <!-- ── Patch Modal ──────────────────────────────────── -->
+  <!-- Patch Modal -->
   <Teleport to="body">
     <div v-if="showPatchModal" class="ctx-modal-overlay" @click.self="showPatchModal = false">
       <div class="ctx-modal ctx-modal--wide">
@@ -446,302 +432,4 @@ async function savePatchToFile() {
   </Teleport>
 </template>
 
-<style scoped>
-/* ── Context Menu ──────────────────────────────────────── */
-.ctx-menu {
-  position: fixed;
-  z-index: 9999;
-  min-width: 240px;
-  background: #1a1d24;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(99, 102, 241, 0.15);
-  padding: 6px 0;
-  backdrop-filter: blur(12px);
-  animation: ctx-fade-in 0.12s ease;
-}
-
-@keyframes ctx-fade-in {
-  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.ctx-file-name {
-  font-size: 10px;
-  font-family: var(--font-mono, monospace);
-  color: rgba(255, 255, 255, 0.35);
-  padding: 4px 14px 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  margin-bottom: 4px;
-}
-
-.ctx-item {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  width: 100%;
-  padding: 6px 14px;
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 12px;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.1s, color 0.1s;
-}
-
-.ctx-item:hover {
-  background: rgba(99, 102, 241, 0.18);
-  color: #fff;
-}
-
-.ctx-item--danger {
-  color: rgba(255, 85, 85, 0.85);
-}
-
-.ctx-item--danger:hover {
-  background: rgba(255, 71, 87, 0.15);
-  color: #ff5555;
-}
-
-.ctx-icon {
-  flex-shrink: 0;
-  color: rgba(255, 255, 255, 0.45);
-}
-
-.ctx-icon--green {
-  color: #2ed573 !important;
-}
-
-.ctx-item--danger .ctx-icon {
-  color: rgba(255, 85, 85, 0.7);
-}
-
-.ctx-sep {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.07);
-  margin: 4px 0;
-}
-
-/* ── Toast ─────────────────────────────────────────────── */
-.ctx-toast {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 99999;
-  padding: 8px 18px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  pointer-events: none;
-  animation: ctx-toast-in 0.2s ease;
-}
-
-@keyframes ctx-toast-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-
-.ctx-toast--ok {
-  background: rgba(46, 213, 115, 0.9);
-  color: #0d1117;
-}
-
-.ctx-toast--error {
-  background: rgba(255, 71, 87, 0.9);
-  color: #fff;
-}
-
-/* ── Modals ─────────────────────────────────────────────── */
-.ctx-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: blur(4px);
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ctx-modal {
-  width: 560px;
-  max-height: 70vh;
-  background: #1a1d24;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.ctx-modal--wide {
-  width: 820px;
-  max-height: 75vh;
-}
-
-.ctx-modal-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.ctx-modal-title {
-  font-size: 12px;
-  font-weight: 600;
-  font-family: var(--font-mono, monospace);
-  color: rgba(255, 255, 255, 0.85);
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ctx-modal-close {
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 14px;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: background 0.15s, color 0.15s;
-}
-
-.ctx-modal-close:hover {
-  background: rgba(255, 71, 87, 0.15);
-  color: #ff5555;
-}
-
-.ctx-modal-action {
-  background: rgba(99, 102, 241, 0.2);
-  border: 1px solid rgba(99, 102, 241, 0.35);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 11px;
-  font-weight: 600;
-  border-radius: 4px;
-  padding: 3px 10px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.ctx-modal-action:hover {
-  background: rgba(99, 102, 241, 0.4);
-}
-
-.ctx-modal-body {
-  flex: 1;
-  overflow: auto;
-  padding: 12px 0;
-}
-
-.ctx-loading,
-.ctx-empty {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
-  padding: 20px;
-  text-align: center;
-  font-style: italic;
-}
-
-/* History */
-.ctx-history-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.ctx-history-row {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 8px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: background 0.1s;
-}
-
-.ctx-history-row:hover {
-  background: rgba(99, 102, 241, 0.08);
-}
-
-.ctx-commit-id {
-  font-family: var(--font-mono, monospace);
-  font-size: 11px;
-  color: #6366f1;
-}
-
-.ctx-commit-msg {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.ctx-commit-meta {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.35);
-}
-
-/* Blame */
-.ctx-blame-list {
-  display: flex;
-  flex-direction: column;
-  font-family: var(--font-mono, monospace);
-  font-size: 11px;
-}
-
-.ctx-blame-row {
-  display: grid;
-  grid-template-columns: 40px 120px 140px 1fr;
-  gap: 8px;
-  padding: 3px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-  transition: background 0.1s;
-  align-items: center;
-}
-
-.ctx-blame-row:hover {
-  background: rgba(99, 102, 241, 0.08);
-}
-
-.ctx-blame-no {
-  color: rgba(255, 255, 255, 0.25);
-  text-align: right;
-}
-
-.ctx-blame-author {
-  color: #6366f1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ctx-blame-date {
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 10px;
-}
-
-.ctx-blame-content {
-  color: rgba(255, 255, 255, 0.7);
-  white-space: pre;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Patch */
-.ctx-patch-pre {
-  font-family: var(--font-mono, monospace);
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.75);
-  padding: 0 16px;
-  white-space: pre;
-  overflow: auto;
-  margin: 0;
-  line-height: 1.6;
-}
-</style>
+<style scoped src="../../styles/organisms/FileContextMenu.css"></style>

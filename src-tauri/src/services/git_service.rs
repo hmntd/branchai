@@ -1136,4 +1136,75 @@ pub fn get_branch_diff_summary(
     Ok(BranchDiffSummary { commits, files })
 }
 
+#[tauri::command]
+pub fn merge_branch(
+    repo_path: String,
+    source_branch: String,
+    target_branch: String,
+) -> Result<String, String> {
+    // 1. Checkout target_branch
+    checkout_branch(repo_path.clone(), target_branch.clone())?;
+
+    // 2. Perform git merge
+    let output = Command::new("git")
+        .current_dir(&repo_path)
+        .args([
+            "merge",
+            &source_branch,
+            "-m",
+            &format!("Merge branch '{}' into {}", source_branch, target_branch),
+        ])
+        .output()
+        .map_err(|e| format!("Failed to execute git merge: {}", e))?;
+
+    if !output.status.success() {
+        let err_msg = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Git merge failed: {}", err_msg));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    Ok(stdout)
+}
+
+#[tauri::command]
+pub fn get_repo_prs(repo_path: String) -> Result<String, String> {
+    let pr_file = Path::new(&repo_path).join(".git").join("branchai_prs.json");
+    if pr_file.exists() {
+        fs::read_to_string(pr_file).map_err(|e| e.to_string())
+    } else {
+        Ok("[]".to_string())
+    }
+}
+
+#[tauri::command]
+pub fn save_repo_prs(repo_path: String, prs_json: String) -> Result<(), String> {
+    let git_dir = Path::new(&repo_path).join(".git");
+    if !git_dir.exists() {
+        return Err("Not a valid git repository".to_string());
+    }
+    let pr_file = git_dir.join("branchai_prs.json");
+    fs::write(pr_file, prs_json).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_repo_issues(repo_path: String) -> Result<String, String> {
+    let issue_file = Path::new(&repo_path).join(".git").join("branchai_issues.json");
+    if issue_file.exists() {
+        fs::read_to_string(issue_file).map_err(|e| e.to_string())
+    } else {
+        Ok("[]".to_string())
+    }
+}
+
+#[tauri::command]
+pub fn save_repo_issues(repo_path: String, issues_json: String) -> Result<(), String> {
+    let git_dir = Path::new(&repo_path).join(".git");
+    if !git_dir.exists() {
+        return Err("Not a valid git repository".to_string());
+    }
+    let issue_file = git_dir.join("branchai_issues.json");
+    fs::write(issue_file, issues_json).map_err(|e| e.to_string())
+}
+
+
 
