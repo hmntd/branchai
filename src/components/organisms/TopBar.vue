@@ -22,6 +22,10 @@ import ActionToast from '../molecules/ActionToast.vue';
 import BaseModal from '../atoms/BaseModal.vue';
 import BaseButton from '../atoms/BaseButton.vue';
 
+import AccountBadge from '../molecules/AccountBadge.vue';
+import { GitAccount } from '../../types/account';
+import { User, Check, ChevronDown } from '@lucide/vue';
+
 const props = defineProps<{
   repoPath: string;
   currentRepo: string;
@@ -33,6 +37,8 @@ const props = defineProps<{
   activeModel: string;
   loading: boolean;
   recentRepos?: string[];
+  accounts?: GitAccount[];
+  activeAccount?: GitAccount | null;
 }>();
 
 const emit = defineEmits<{
@@ -42,7 +48,10 @@ const emit = defineEmits<{
   (e: 'closeRepo'): void;
   (e: 'browseRepo'): void;
   (e: 'selectRepo', path: string): void;
+  (e: 'selectAccount', accountId: string): void;
 }>();
+
+const showAccountDropdown = ref(false);
 
 const showBranchModal = ref(false);
 const showRepoSearchModal = ref(false);
@@ -225,6 +234,32 @@ async function handleCreateBranch() {
       </div>
 
       <div class="menu-spacer"></div>
+
+      <!-- Active Git Account Indicator & Quick Switcher -->
+      <div v-if="activeAccount" class="account-selector-wrap">
+        <div class="account-pill-trigger" @click="showAccountDropdown = !showAccountDropdown">
+          <AccountBadge :account="activeAccount" interactive />
+          <ChevronDown :size="12" class="chevron-icon" />
+        </div>
+
+        <div v-if="showAccountDropdown" class="account-dropdown-menu" @click.self="showAccountDropdown = false">
+          <div class="dropdown-title-row">ASSIGN GIT ACCOUNT FOR WORKSPACE</div>
+          <div v-for="acc in (accounts || [])" :key="acc.id" class="dropdown-account-item"
+            :class="{ active: acc.id === activeAccount?.id }"
+            @click="emit('selectAccount', acc.id); showAccountDropdown = false;">
+            <AccountBadge :account="acc" />
+            <Check v-if="acc.id === activeAccount?.id" :size="14" class="text-success" />
+          </div>
+          <div class="dropdown-footer-action" @click="emit('openSettings'); showAccountDropdown = false;">
+            <Settings :size="12" /> Manage Accounts in Settings...
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="no-account-pill" @click="emit('openSettings')" title="Click to link a Git account">
+        <User :size="12" />
+        <span>Link Git Account</span>
+      </div>
 
       <div class="ai-status-pill" @click="emit('openSettings')">
         <Sparkles :size="11" />

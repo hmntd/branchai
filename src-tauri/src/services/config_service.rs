@@ -2,6 +2,24 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
+use std::collections::HashMap;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GitAccount {
+    pub id: String,
+    pub name: String,
+    pub provider: String, // "github", "gitlab", "bitbucket", "custom"
+    pub username: String,
+    pub email: String,
+    #[serde(default)]
+    pub avatar_url: Option<String>,
+    pub auth_type: String, // "ssh", "pat", "https"
+    #[serde(default)]
+    pub ssh_key_path: Option<String>,
+    #[serde(default)]
+    pub personal_access_token: Option<String>,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AppConfig {
     pub openai_key: String,
@@ -17,6 +35,10 @@ pub struct AppConfig {
     pub last_opened_repo: Option<String>,
     #[serde(default)]
     pub recent_repos: Vec<String>,
+    #[serde(default)]
+    pub accounts: Vec<GitAccount>,
+    #[serde(default)]
+    pub repo_account_mappings: HashMap<String, String>,
 }
 
 impl Default for AppConfig {
@@ -33,6 +55,8 @@ impl Default for AppConfig {
             custom_prompt_conflict: "Analyze the conflicting code blocks from Git merge conflict markers. Propose a clean, merged resolution that preserves functional intent from both sides without breaking syntax. Return the resolved code file.".to_string(),
             last_opened_repo: None,
             recent_repos: Vec::new(),
+            accounts: Vec::new(),
+            repo_account_mappings: HashMap::new(),
         }
     }
 }

@@ -22,6 +22,9 @@ import { GraphNode } from './BranchGraph.vue';
 import BaseBadge from '../atoms/BaseBadge.vue';
 import BaseButton from '../atoms/BaseButton.vue';
 
+import AccountBadge from '../molecules/AccountBadge.vue';
+import { GitAccount } from '../../types/account';
+
 export interface FileStatus {
   path: string;
   status: string;
@@ -33,6 +36,7 @@ const props = defineProps<{
   files: FileStatus[];
   currentBranch: string;
   selectedCommit?: GraphNode | null;
+  activeAccount?: GitAccount | null;
 }>();
 
 const emit = defineEmits<{
@@ -491,6 +495,7 @@ const parsedDiffLines = computed((): DiffRow[] => {
     <div v-else class="commit-box gk-panel">
       <div class="commit-box-header">
         <span class="commit-icon-label">-o- Commit</span>
+        <AccountBadge v-if="activeAccount" :account="activeAccount" />
       </div>
 
       <label class="checkbox-label">
@@ -532,35 +537,37 @@ const parsedDiffLines = computed((): DiffRow[] => {
     </div>
 
     <!-- File Diff Modal -->
-    <div v-if="showDiffModal" class="modal-overlay" @click.self="showDiffModal = false">
-      <div class="diff-modal gk-panel">
-        <div class="modal-header">
-          <FileText :size="15" class="icon-primary" />
-          <span class="title">{{ selectedFile?.path }}</span>
-          <button class="icon-btn" @click="showDiffModal = false">✕</button>
-        </div>
-        <div class="modal-body">
-          <div v-if="loadingDiff" class="loading">Loading diff...</div>
-          <div v-else class="diff-view">
-            <div v-for="(row, idx) in parsedDiffLines" :key="idx" class="diff-line" :class="{
-              'diff-add': row.type === 'add',
-              'diff-remove': row.type === 'remove',
-              'diff-hunk': row.type === 'hunk',
-              'diff-meta': row.type === 'meta',
-            }">
-              <span class="diff-gutter diff-gutter-old">{{ row.oldNo ?? '' }}</span>
-              <span class="diff-gutter diff-gutter-new">{{ row.newNo ?? '' }}</span>
-              <span class="diff-sign">{{
-                row.type === 'add' ? '+' :
-                  row.type === 'remove' ? '-' :
-                    row.type === 'hunk' ? '' : ' '
-              }}</span>
-              <span class="diff-content">{{ row.content }}</span>
+    <Teleport to="body">
+      <div v-if="showDiffModal" class="modal-overlay" @click.self="showDiffModal = false">
+        <div class="diff-modal gk-panel">
+          <div class="modal-header">
+            <FileText :size="15" class="icon-primary" />
+            <span class="title">{{ selectedFile?.path }}</span>
+            <button class="icon-btn" @click="showDiffModal = false">✕</button>
+          </div>
+          <div class="modal-body">
+            <div v-if="loadingDiff" class="loading">Loading diff...</div>
+            <div v-else class="diff-view">
+              <div v-for="(row, idx) in parsedDiffLines" :key="idx" class="diff-line" :class="{
+                'diff-add': row.type === 'add',
+                'diff-remove': row.type === 'remove',
+                'diff-hunk': row.type === 'hunk',
+                'diff-meta': row.type === 'meta',
+              }">
+                <span class="diff-gutter diff-gutter-old">{{ row.oldNo ?? '' }}</span>
+                <span class="diff-gutter diff-gutter-new">{{ row.newNo ?? '' }}</span>
+                <span class="diff-sign">{{
+                  row.type === 'add' ? '+' :
+                    row.type === 'remove' ? '-' :
+                      row.type === 'hunk' ? '' : ' '
+                }}</span>
+                <span class="diff-content">{{ row.content }}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </Teleport>
   </aside>
 
   <!-- File Context Menu -->

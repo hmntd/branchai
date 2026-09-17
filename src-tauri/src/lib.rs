@@ -62,6 +62,8 @@ pub fn run() {
             services::git_service::save_repo_prs,
             services::git_service::get_repo_issues,
             services::git_service::save_repo_issues,
+            services::git_service::apply_repo_account,
+            services::git_service::test_account_connection,
             services::ai_service::generate_commit_message,
             services::ai_service::analyze_code_review,
             services::ai_service::assist_conflict_resolution,

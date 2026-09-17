@@ -64,6 +64,101 @@
   cursor: pointer;
 }
 
+/* ── Git Account Switcher in TopBar ─────────────────────────────── */
+.account-selector-wrap {
+  position: relative;
+}
+
+.account-pill-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.account-pill-trigger .chevron-icon {
+  color: var(--text-dim);
+  transition: transform 0.2s;
+}
+
+.account-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  width: 260px;
+  background: #181a1f;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  z-index: 1000;
+}
+
+.dropdown-title-row {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+  padding: 6px 8px 4px 8px;
+}
+
+.dropdown-account-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.dropdown-account-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dropdown-account-item.active {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.dropdown-footer-action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  font-size: 11px;
+  color: var(--primary);
+  border-top: 1px solid var(--border-color);
+  margin-top: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.dropdown-footer-action:hover {
+  background: rgba(0, 210, 211, 0.1);
+}
+
+.no-account-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed var(--border-color);
+  padding: 2px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.no-account-pill:hover {
+  color: var(--text-main);
+  border-color: var(--primary);
+}
+
 .toolbar {
   display: flex;
   align-items: center;

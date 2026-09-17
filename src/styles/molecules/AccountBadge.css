@@ -1,0 +1,102 @@
+/* AccountBadge.css */
+.account-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  font-size: 11px;
+  user-select: none;
+  transition: all 0.2s;
+}
+
+.account-badge.interactive {
+  cursor: pointer;
+}
+
+.account-badge.interactive:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.avatar-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account-details {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.account-name-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.account-username {
+  font-weight: 600;
+  color: var(--text-main);
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-email {
+  font-size: 10px;
+  color: var(--text-muted);
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.provider-pill {
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.provider-pill.github {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f0f6fc;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.provider-pill.gitlab {
+  background: rgba(252, 109, 38, 0.15);
+  color: #fc6d26;
+  border-color: rgba(252, 109, 38, 0.3);
+}
+
+.provider-pill.bitbucket {
+  background: rgba(0, 82, 204, 0.15);
+  color: #2684ff;
+  border-color: rgba(0, 82, 204, 0.3);
+}

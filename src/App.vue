@@ -12,6 +12,7 @@ import IssuesView from './components/organisms/IssuesView.vue';
 import SettingsModal, { AppConfig } from './components/organisms/SettingsModal.vue';
 import TerminalDrawer from './components/organisms/TerminalDrawer.vue';
 import WelcomeScreen from './components/organisms/WelcomeScreen.vue';
+import { GitAccount } from './types/account';
 
 type Tab = 'graph' | 'review' | 'conflicts' | 'pull_requests' | 'issues';
 
@@ -38,9 +39,62 @@ const config = ref<AppConfig>({
   custom_prompt_conflict: '',
   last_opened_repo: null,
   recent_repos: [],
+  accounts: [],
+  repo_account_mappings: {},
 });
 
 const isZeroState = computed(() => !repoPath.value.trim());
+
+const activeAccount = computed<GitAccount | null>(() => {
+  if (!repoPath.value || !config.value.accounts || config.value.accounts.length === 0) {
+    return null;
+  }
+  const mappings = config.value.repo_account_mappings || {};
+  const mappedId = mappings[repoPath.value];
+  if (mappedId) {
+    const found = config.value.accounts.find((a) => a.id === mappedId);
+    if (found) return found;
+  }
+  return config.value.accounts[0] || null;
+});
+
+async function applyAccountToCurrentRepo() {
+  if (!repoPath.value || !activeAccount.value) return;
+  try {
+    await invoke('apply_repo_account', {
+      repoPath: repoPath.value,
+      account: activeAccount.value,
+    });
+  } catch (e) {
+    console.error('Error applying account to repo:', e);
+  }
+}
+
+async function handleSelectAccount(accountId: string) {
+  if (!repoPath.value) return;
+  if (!config.value.repo_account_mappings) {
+    config.value.repo_account_mappings = {};
+  }
+  config.value.repo_account_mappings[repoPath.value] = accountId;
+
+  const targetAcc = (config.value.accounts || []).find((a) => a.id === accountId);
+  if (targetAcc) {
+    try {
+      await invoke('apply_repo_account', {
+        repoPath: repoPath.value,
+        account: targetAcc,
+      });
+    } catch (e) {
+      console.error('Failed to apply account to .git/config:', e);
+    }
+  }
+
+  try {
+    await invoke('save_config', { config: config.value });
+  } catch (e) {
+    console.error('Failed to save config:', e);
+  }
+}
 
 const stagedCount = computed(() => files.value.filter((f) => f.staged).length);
 const unstagedCount = computed(() => files.value.filter((f) => !f.staged).length);
@@ -51,6 +105,8 @@ const lastCommitMsg = computed(() => (nodes.value.length > 0 ? nodes.value[0].me
 async function loadConfig() {
   try {
     const cfg: AppConfig = await invoke('get_config');
+    if (!cfg.accounts) cfg.accounts = [];
+    if (!cfg.repo_account_mappings) cfg.repo_account_mappings = {};
     config.value = cfg;
 
     if (cfg.last_opened_repo && cfg.last_opened_repo.trim()) {
@@ -79,6 +135,8 @@ async function refreshRepo() {
       repoPath: repoPath.value,
     });
     branches.value = branchList;
+
+    await applyAccountToCurrentRepo();
   } catch (err) {
     console.error('Error reading repository:', err);
   } finally {
@@ -188,9 +246,10 @@ onMounted(async () => {
       <TopBar :repo-path="repoPath" :current-repo="repoPath.split('/').pop() || 'BranchAI'"
         :current-branch="currentBranch" :staged-count="stagedCount" :unstaged-count="unstagedCount"
         :last-commit-msg="lastCommitMsg" :active-provider="config.active_provider" :active-model="config.active_model"
-        :loading="loading" :recent-repos="config.recent_repos || []" @refresh="refreshRepo" @open-settings="showSettings = true"
+        :loading="loading" :recent-repos="config.recent_repos || []" :accounts="config.accounts || []"
+        :active-account="activeAccount" @refresh="refreshRepo" @open-settings="showSettings = true"
         @toggle-terminal="showTerminal = !showTerminal" @close-repo="handleCloseRepo" @browse-repo="handleBrowseRepo"
-        @select-repo="openRepo" />
+        @select-repo="openRepo" @select-account="handleSelectAccount" />
 
       <!-- GitKraken 3-Pane Main Layout -->
       <div class="main-content">
@@ -218,7 +277,8 @@ onMounted(async () => {
 
         <!-- 3. Right Sidebar -->
         <RightStagingPanel :repo-path="repoPath" :files="files" :current-branch="currentBranch"
-          :selected-commit="selectedCommit" @refresh="refreshRepo" @select-wip="handleSelectWip" />
+          :selected-commit="selectedCommit" :active-account="activeAccount" @refresh="refreshRepo"
+          @select-wip="handleSelectWip" />
       </div>
     </template>
 
