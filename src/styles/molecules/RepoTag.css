@@ -1,54 +1,22 @@
-/* RepoTag.css */
+@reference "../../assets/main.css";
+
+/* RepoTag.css - Tailwind CSS v4 */
 .repo-tag-wrapper {
-  position: relative;
-  display: inline-flex;
+  @apply relative inline-flex;
 }
 
 .repo-tag {
-  font-size: 10px;
-  font-family: var(--font-mono);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-muted);
-  padding: 2px 5px;
-  border-radius: 3px;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: all 0.15s ease;
-  user-select: none;
-}
-
-.repo-tag:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-main);
+  @apply text-[10px] font-mono bg-white/5 text-[#9da5b4] px-1.25 py-0.5 rounded-[3px] cursor-pointer border border-transparent transition-all duration-150 ease-in-out select-none hover:bg-white/10 hover:text-[#e6e6e6];
 }
 
 .repo-tag.active {
-  background: rgba(0, 210, 211, 0.15);
-  color: var(--primary);
-  border-color: rgba(0, 210, 211, 0.3);
+  @apply bg-[#00d2d3]/15 text-[#00d2d3] border-[#00d2d3]/30;
 }
 
 .repo-tag-wrapper .tooltip-box {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 4px;
-  background: #121417;
-  color: var(--text-main);
-  border: 1px solid var(--primary);
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 10px;
-  font-weight: 500;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
-  z-index: 1000;
+  @apply absolute top-full left-0 mt-1 bg-[#121417] text-[#e6e6e6] border border-[#00d2d3] rounded px-2 py-1 text-[10px] font-medium whitespace-nowrap pointer-events-none opacity-0 invisible shadow-[0_4px_15px_rgba(0,0,0,0.7)] z-[1000];
 }
 
 .repo-tag-wrapper:hover .tooltip-box {
-  opacity: 1;
-  visibility: visible;
+  @apply opacity-100 visible;
 }

@@ -1,198 +1,118 @@
-/* LeftSidebar.css */
+@reference "../../assets/main.css";
+
+/* LeftSidebar.css - Tailwind CSS v4 */
 .left-sidebar {
-  width: 250px;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-sidebar);
-  border-radius: 0;
-  border-right: 1px solid var(--border-color);
-  user-select: none;
-  overflow-y: auto;
+  @apply w-[250px] flex flex-col bg-[#1e222b] rounded-none border-r border-white/10 select-none overflow-y-auto;
 }
 
 .repo-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px;
-  background: rgba(0, 0, 0, 0.25);
+  @apply flex flex-col gap-1.5 p-2.5 bg-black/25;
 }
 
 .repo-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text-muted);
-  letter-spacing: 0.5px;
+  @apply flex items-center gap-1.5 text-[10px] font-bold text-[#9da5b4] tracking-wider;
 }
 
 .repo-header .title {
-  flex: 1;
+  @apply flex-1;
 }
 
 .icon-action-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  padding: 2px;
-  border-radius: 3px;
-  display: flex;
-  align-items: center;
-  transition: all 0.15s ease;
+  @apply bg-transparent border-0 text-[#5c6370] cursor-pointer p-0.5 rounded flex items-center transition-all duration-150 ease-in-out;
 }
 
 .icon-action-btn.danger:hover {
-  color: var(--danger);
-  background: rgba(255, 71, 87, 0.2);
+  @apply text-[#ff4757] bg-[#ff4757]/20;
 }
 
 .repo-input-box {
-  display: flex;
-  gap: 6px;
+  @apply flex gap-1.5;
 }
 
 .repo-input {
-  flex: 1;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  padding: 4px 6px;
+  @apply flex-1 font-mono text-[11px] px-1.5 py-1;
 }
 
 .recent-repos {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 2px;
+  @apply flex flex-col gap-1 mt-0.5;
 }
 
 .recent-label {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--text-dim);
+  @apply text-[9px] font-bold text-[#5c6370];
 }
 
 .recent-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
+  @apply flex flex-wrap gap-1;
 }
 
 .divider {
-  border: none;
-  border-top: 1px solid var(--border-color);
-  margin: 4px 0;
+  @apply border-0 border-t border-white/10 my-1;
 }
 
 .filter-box {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px 10px;
+  @apply flex flex-col gap-1 px-2.5 py-2;
 }
 
 .viewing-count {
-  font-size: 10px;
-  color: var(--text-dim);
+  @apply text-[10px] text-[#5c6370];
 }
 
 .tree-container {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 4px 6px;
+  @apply flex flex-col gap-0.5 px-1.5 py-1;
 }
 
 .tree-group {
-  display: flex;
-  flex-direction: column;
+  @apply flex flex-col;
 }
 
 .group-header {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 6px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  cursor: pointer;
+  @apply flex items-center gap-1.25 px-1.5 py-1.25 text-[11px] font-bold text-[#9da5b4] cursor-pointer;
 }
 
 .group-header:hover {
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-main);
-  border-radius: 4px;
+  @apply bg-white/5 text-[#e6e6e6] rounded;
 }
 
 .group-header.active {
-  background: rgba(0, 210, 211, 0.12);
-  color: var(--primary);
-  border-radius: 4px;
+  @apply bg-[#00d2d3]/12 text-[#00d2d3] rounded;
 }
 
 .group-title {
-  flex: 1;
-  letter-spacing: 0.5px;
+  @apply flex-1 tracking-wider;
 }
 
 .count {
-  font-size: 10px;
-  color: var(--text-dim);
+  @apply text-[10px] text-[#5c6370];
 }
 
 .count-pill {
-  font-size: 9px;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  background: rgba(0, 210, 211, 0.2);
-  color: var(--primary);
-  padding: 1px 6px;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 210, 211, 0.4);
+  @apply text-[9px] font-mono font-bold bg-[#00d2d3]/20 text-[#00d2d3] px-1.5 py-0.5 rounded-full border border-[#00d2d3]/40;
 }
 
 .count-pill.warning {
-  background: rgba(255, 165, 2, 0.2);
-  color: var(--warning);
-  border-color: rgba(255, 165, 2, 0.4);
+  @apply bg-[#ffa502]/20 text-[#ffa502] border-[#ffa502]/40;
 }
 
 .group-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding-left: 12px;
+  @apply flex flex-col gap-0.5 pl-3;
 }
 
 .tree-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 6px;
-  border-radius: 3px;
-  font-size: 11px;
-  color: var(--text-muted);
-  cursor: pointer;
+  @apply flex items-center gap-1.5 px-1.5 py-1 rounded text-[11px] text-[#9da5b4] cursor-pointer;
 }
 
 .tree-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-main);
+  @apply bg-white/10 text-[#e6e6e6];
 }
 
 .tree-item.active {
-  color: var(--primary);
-  font-weight: 600;
-  background: rgba(0, 210, 211, 0.12);
+  @apply text-[#00d2d3] font-semibold bg-[#00d2d3]/12;
 }
 
 .text-purple {
-  color: #9c88ff;
+  @apply text-[#9c88ff];
 }
 
 .icon-purple {
-  color: #9c88ff;
+  @apply text-[#9c88ff];
 }

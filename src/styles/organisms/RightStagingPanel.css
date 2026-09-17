@@ -1,398 +1,213 @@
-/* RightStagingPanel.css */
+@reference "../../assets/main.css";
+
+/* RightStagingPanel.css - Tailwind CSS v4 */
 .right-staging-panel {
-  width: 310px;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-sidebar);
-  border-radius: 0;
-  border-left: 1px solid var(--border-color);
-  user-select: none;
-  overflow: hidden;
+  @apply w-[310px] flex flex-col bg-[#1e222b] rounded-none border-l border-white/10 select-none overflow-hidden;
 }
 
 .panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border-color);
-  background: #121417;
+  @apply flex justify-between items-center px-2.5 py-2 border-b border-white/10 bg-[#121417];
 }
 
 .changes-title {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
+  @apply text-[11px] font-semibold text-[#9da5b4];
 }
 
 .view-toggles {
-  display: flex;
-  gap: 3px;
+  @apply flex gap-1;
 }
 
 .files-container {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 6px;
+  @apply flex-1 overflow-y-auto flex flex-col gap-1.5 p-1.5;
 }
 
 .accordion-section {
-  display: flex;
-  flex-direction: column;
+  @apply flex flex-col;
 }
 
 .acc-header {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 6px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  cursor: pointer;
+  @apply flex items-center gap-1.25 px-1.5 py-1.25 text-[11px] font-bold text-[#9da5b4] cursor-pointer;
 }
 
 .acc-title {
-  flex: 1;
+  @apply flex-1;
 }
 
 .stage-all-btn {
-  background: #2ed573;
-  color: #0d1117;
-  font-weight: 700;
+  @apply bg-[#2ed573] text-[#0d1117] font-bold;
 }
 
 .file-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding-left: 8px;
+  @apply flex flex-col gap-0.5 pl-2;
 }
 
 .file-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 6px;
-  border-radius: 3px;
-  font-size: 11px;
-  font-family: var(--font-mono);
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.file-row:hover {
-  background: var(--bg-card-hover);
+  @apply flex items-center gap-1.5 px-1.5 py-1 rounded text-[11px] font-mono cursor-pointer bg-white/5 hover:bg-[#282c34];
 }
 
 .status-prefix {
-  font-weight: 700;
-  width: 10px;
+  @apply font-bold w-2.5;
 }
 
 .file-path {
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--text-main);
+  @apply flex-1 whitespace-nowrap overflow-hidden text-ellipsis text-[#e6e6e6];
 }
 
 .stage-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 2px 4px;
-}
-.stage-btn:hover {
-  color: var(--text-main);
+  @apply bg-transparent border-0 text-[#9da5b4] cursor-pointer px-1 py-0.5 hover:text-[#e6e6e6];
 }
 
 .empty-list {
-  font-size: 10px;
-  color: var(--text-dim);
-  font-style: italic;
-  padding: 4px 6px;
+  @apply text-[10px] text-[#5c6370] italic px-1.5 py-1;
 }
 
 /* Commit Box */
 .commit-box {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px;
-  background: #181a1f;
-  border-radius: 0;
-  border-top: 1px solid var(--border-color);
+  @apply flex flex-col gap-2 p-2.5 bg-[#181a1f] rounded-none border-t border-white/10;
 }
 
 .commit-box-header {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  @apply text-[11px] font-bold text-[#9da5b4] flex justify-between items-center;
 }
 
 .commit-details-body {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid var(--border-color);
+  @apply flex flex-col gap-1.5 bg-black/30 p-2 rounded border border-white/10;
 }
 
 .commit-msg-preview {
-  font-size: 11px;
-  color: var(--text-main);
-  line-height: 1.4;
-  white-space: pre-wrap;
-  word-break: break-word;
+  @apply text-[11px] text-[#e6e6e6] leading-snug whitespace-pre-wrap break-words;
 }
 
 .commit-author-tag {
-  font-size: 10px;
-  color: var(--text-dim);
+  @apply text-[10px] text-[#5c6370];
 }
 
 .checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  color: var(--text-muted);
-  cursor: pointer;
+  @apply flex items-center gap-1.5 text-[10px] text-[#9da5b4] cursor-pointer;
 }
 
 .inputs-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  @apply flex flex-col gap-1.5;
 }
 
 .summary-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
+  @apply relative flex items-center;
 }
 
 .summary-input {
-  width: 100%;
-  font-size: 11px;
-  padding: 5px 30px 5px 8px;
-  background: rgba(0, 0, 0, 0.4);
+  @apply w-full text-[11px] py-1.25 pl-2 pr-7.5 bg-black/40;
 }
 
 .char-count {
-  position: absolute;
-  right: 8px;
-  font-size: 10px;
-  font-family: var(--font-mono);
-  color: var(--text-dim);
+  @apply absolute right-2 text-[10px] font-mono text-[#5c6370];
 }
 
 .desc-textarea {
-  font-size: 11px;
-  padding: 5px 8px;
-  background: rgba(0, 0, 0, 0.4);
-  resize: none;
+  @apply text-[11px] px-2 py-1.25 bg-black/40 resize-none;
 }
 
 .actions-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+  @apply flex flex-col gap-1.25;
 }
 
 .btn-full {
-  width: 100%;
-  justify-content: center;
-  padding: 7px;
+  @apply w-full justify-center p-1.75;
 }
 
 .stage-commit-btn {
-  background: #2ed573;
-  color: #0d1117;
-  font-weight: 700;
+  @apply bg-[#2ed573] text-[#0d1117] font-bold;
 }
 
 .status-alert {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  padding: 5px 8px;
-  border-radius: 3px;
+  @apply flex items-center gap-1.5 text-[10px] px-2 py-1.25 rounded;
 }
 
 .alert-danger {
-  background: rgba(255, 71, 87, 0.15);
-  color: var(--danger);
+  @apply bg-[#ff4757]/15 text-[#ff4757];
 }
 
 .alert-success {
-  background: rgba(46, 213, 115, 0.15);
-  color: var(--success);
+  @apply bg-[#2ed573]/15 text-[#2ed573];
 }
 
 .modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(4px);
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @apply fixed inset-0 bg-black/75 backdrop-blur-xs z-[10000] flex items-center justify-center;
 }
 
 .diff-modal {
-  width: 760px;
-  max-width: 90vw;
-  height: 540px;
-  max-height: 85vh;
-  display: flex;
-  flex-direction: column;
-  background: #1a1d24;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
-  overflow: hidden;
+  @apply w-[760px] max-w-[90vw] h-[540px] max-h-[85vh] flex flex-col bg-[#1a1d24] border border-white/10 rounded-xl shadow-[0_16px_48px_rgba(0,0,0,0.8)] overflow-hidden;
 }
 
 .modal-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  @apply flex items-center gap-2 px-3.5 py-2.5 border-b border-white/10 bg-white/5;
 }
 
 .modal-header .title {
-  font-size: 12px;
-  font-weight: 600;
-  font-family: var(--font-mono, monospace);
-  color: rgba(255, 255, 255, 0.85);
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  @apply text-[12px] font-semibold font-mono text-white/85 flex-1 whitespace-nowrap overflow-hidden text-ellipsis;
 }
 
 .modal-body {
-  flex: 1;
-  overflow: auto;
-  padding: 12px 0;
-  background: #121418;
+  @apply flex-1 overflow-auto py-3 bg-[#121418];
 }
 
 .loading {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
-  padding: 20px;
-  text-align: center;
-  font-style: italic;
+  @apply text-[12px] text-white/35 p-5 text-center italic;
 }
 
 .diff-view {
-  display: flex;
-  flex-direction: column;
-  font-family: var(--font-mono, monospace);
-  font-size: 11px;
-  line-height: 1.5;
+  @apply flex flex-col font-mono text-[11px] leading-normal;
 }
 
 .diff-line {
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  min-height: 20px;
+  @apply flex items-center px-3 min-h-[20px];
 }
 
 .diff-gutter {
-  width: 36px;
-  flex-shrink: 0;
-  color: rgba(255, 255, 255, 0.25);
-  text-align: right;
-  padding-right: 8px;
-  user-select: none;
+  @apply w-[36px] shrink-0 text-white/25 text-right pr-2 select-none;
 }
 
 .diff-gutter-new {
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  margin-right: 8px;
+  @apply border-r border-white/10 mr-2;
 }
 
 .diff-sign {
-  width: 14px;
-  flex-shrink: 0;
-  font-weight: bold;
+  @apply w-3.5 shrink-0 font-bold;
 }
 
 .diff-content {
-  white-space: pre-wrap;
-  word-break: break-all;
-  flex: 1;
+  @apply whitespace-pre-wrap break-all flex-1;
 }
 
 .diff-add {
-  background: rgba(46, 213, 115, 0.12);
-  color: #2ed573;
+  @apply bg-[#2ed573]/12 text-[#2ed573];
 }
 .diff-add .diff-sign {
-  color: #2ed573;
+  @apply text-[#2ed573];
 }
 
 .diff-remove {
-  background: rgba(255, 71, 87, 0.12);
-  color: #ff4757;
+  @apply bg-[#ff4757]/12 text-[#ff4757];
 }
 .diff-remove .diff-sign {
-  color: #ff4757;
+  @apply text-[#ff4757];
 }
 
 .diff-hunk {
-  background: rgba(99, 102, 241, 0.15);
-  color: #a5b4fc;
-  font-style: italic;
+  @apply bg-[#6366f1]/15 text-[#a5b4fc] italic;
 }
 
 .diff-meta {
-  color: rgba(255, 255, 255, 0.4);
+  @apply text-white/40;
 }
 
-.text-success { color: var(--success); }
-.text-danger { color: var(--danger); }
-.text-warning { color: var(--warning); }
-.btn-xs { padding: 3px 6px; font-size: 10px; }
+.text-success { @apply text-[#2ed573]; }
+.text-danger { @apply text-[#ff4757]; }
+.text-warning { @apply text-[#ffa502]; }
+.btn-xs { @apply px-1.5 py-0.5 text-[10px]; }
 .spinning { animation: spin 1s linear infinite; }
 
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
 .icon-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 4px;
-  line-height: 1;
-  font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s, color 0.15s;
-}
-
-.icon-btn:hover {
-  background: rgba(255, 71, 87, 0.15);
-  color: #ff5555;
+  @apply bg-transparent border-0 text-[#9da5b4] cursor-pointer px-1.5 py-1 rounded leading-none text-[14px] inline-flex items-center justify-center transition-colors duration-150 hover:bg-[#ff4757]/15 hover:text-[#ff5555];
 }

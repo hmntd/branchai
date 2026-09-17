@@ -1,76 +1,38 @@
-/* BaseModal.css */
+@reference "../../assets/main.css";
+
+/* BaseModal.css - Tailwind CSS v4 */
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @apply fixed inset-0 w-screen h-screen bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center;
 }
 
 .modal-card {
-  width: 440px;
-  max-width: 90vw;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-  display: flex;
-  flex-direction: column;
+  @apply w-[440px] max-w-[90vw] bg-[#21252b] border border-white/10 rounded-lg shadow-[0_10px_30px_rgba(0,0,0,0.6)] flex flex-col;
 }
 
 .modal-card.wide {
-  width: 540px;
+  @apply w-[540px];
 }
 
 .modal-card.extra-wide {
-  width: 720px;
+  @apply w-[720px];
 }
 
 .modal-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border-color);
-  font-weight: 600;
-  font-size: 13px;
+  @apply flex items-center gap-2 px-4 py-3 border-b border-white/10 font-semibold text-[13px];
 }
 
 .modal-header .title {
-  flex: 1;
+  @apply flex-1;
 }
 
 .modal-close-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 3px;
-  border-radius: 4px;
-}
-
-.modal-close-btn:hover {
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.1);
+  @apply bg-transparent border-0 text-[#9da5b4] cursor-pointer p-1 rounded hover:text-[#e6e6e6] hover:bg-white/10;
 }
 
 .modal-body {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  @apply p-4 flex flex-col gap-2.5;
 }
 
 .modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid var(--border-color);
+  @apply flex justify-end gap-2 px-4 py-3 border-t border-white/10;
 }

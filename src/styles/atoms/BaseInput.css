@@ -1,40 +1,22 @@
-/* BaseInput.css */
+@reference "../../assets/main.css";
+
+/* BaseInput.css - Tailwind CSS v4 */
 .base-input-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 100%;
+  @apply flex flex-col gap-1 w-full;
 }
 
 .base-input-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
+  @apply text-[11px] font-semibold text-[#9da5b4];
 }
 
 .base-input {
-  font-family: var(--font-sans);
-  background-color: #181a1f;
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  border-radius: 4px;
-  padding: 6px 10px;
-  font-size: 12px;
-  outline: none;
-  width: 100%;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.base-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px var(--primary-glow);
+  @apply font-sans bg-[#181a1f] border border-white/10 text-[#e6e6e6] rounded px-2.5 py-1.5 text-[12px] outline-none w-full transition-colors duration-200 focus:border-[#00d2d3] focus:shadow-[0_0_0_2px_rgba(0,210,211,0.25)];
 }
 
 .base-input.mono {
-  font-family: var(--font-mono);
+  @apply font-mono;
 }
 
 .base-input.sm {
-  padding: 4px 8px;
-  font-size: 11px;
+  @apply px-2 py-1 text-[11px];
 }

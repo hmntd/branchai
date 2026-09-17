@@ -1,126 +1,49 @@
+@reference "../../assets/main.css";
+
+/* Navbar.css - Tailwind CSS v4 */
 .navbar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 10px 20px;
-  height: 56px;
-  border-radius: 0;
-  border-bottom: 1px solid var(--border-color);
-  background: rgba(13, 17, 26, 0.95);
-  z-index: 50;
+  @apply flex items-center gap-4 px-5 py-2.5 h-[56px] rounded-none border-b border-white/8 bg-[#0d111a]/95 z-50;
 }
 
 .brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  @apply flex items-center gap-2;
 }
 
 .logo-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #a855f7 0%, #38bdf8 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
+  @apply w-8 h-8 rounded-lg bg-gradient-to-br from-[#a855f7] to-[#38bdf8] flex items-center justify-center text-white;
 }
 
 .brand-title {
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
+  @apply text-[16px] font-bold tracking-tight;
 }
 
 .highlight {
-  color: var(--primary);
+  @apply text-[#00d2d3];
 }
 
 .repo-selector {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 4px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  flex: 0 1 450px;
+  @apply flex items-center gap-2 bg-black/40 px-2.5 py-1 rounded-lg border border-white/8 flex-[0_1_450px];
 }
 
 .repo-input {
-  border: none;
-  background: transparent;
-  width: 100%;
-  padding: 4px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-}
-.repo-input:focus {
-  box-shadow: none;
+  @apply border-0 bg-transparent w-full p-1 font-mono text-[12px] focus:shadow-none;
 }
 
 .branch-status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 14px;
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  color: var(--primary);
-  font-size: 12px;
-  font-weight: 600;
+  @apply flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#38bdf8]/12 border border-[#38bdf8]/30 text-[#00d2d3] text-[12px] font-semibold;
 }
 
 .spacer {
-  flex: 1;
+  @apply flex-1;
 }
 
 .ai-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(99, 102, 241, 0.15));
-  border: 1px solid rgba(168, 85, 247, 0.3);
-  color: #c084fc;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.ai-badge:hover {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(99, 102, 241, 0.25));
-  border-color: rgba(168, 85, 247, 0.5);
+  @apply flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-br from-[#a855f7]/15 to-[#6366f1]/15 border border-[#a855f7]/30 text-[#c084fc] text-[11px] font-semibold cursor-pointer transition-all duration-200 hover:from-[#a855f7]/25 hover:to-[#6366f1]/25 hover:border-[#a855f7]/50;
 }
 
 .icon-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
+  @apply bg-transparent border-0 text-[#9da5b4] cursor-pointer p-1.5 rounded-md flex items-center justify-center transition-all duration-200 hover:text-[#e6e6e6] hover:bg-white/8;
 }
 
-.icon-btn:hover {
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.spinning {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  100% {
-    transform: rotate(360deg);
-  }
-}
+.spinning { animation: spin 1s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }

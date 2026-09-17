@@ -27,7 +27,7 @@
 - **Build Tool**: [Vite](https://vitejs.dev/)
 - **Architecture**: Atomic Component Design (`atoms`, `molecules`, `organisms`)
 - **Icons**: [Lucide Vue Next](https://lucide.dev/guide/packages/lucide-vue-next)
-- **Styling**: Vanilla CSS Design System (Custom variables, glassmorphism, responsive grid layouts)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) (`@tailwindcss/vite`, custom `@theme` variables, atomic `@apply` directives, glassmorphic styling)
 
 ### **Backend (Desktop Native)**
 - **Framework**: [Tauri v2](https://v2.tauri.app/)
@@ -115,11 +115,12 @@ npm run build
 ```
 BranchAI/
 ├── src/                          # Vue 3 Frontend Root
-│   ├── assets/                   # CSS Design System & Static Assets
+│   ├── assets/                   # Tailwind CSS v4 Global Entrypoint & Theme Imports
 │   ├── components/               # Atomic Component Hierarchy
 │   │   ├── atoms/                # Base UI Elements (Buttons, Inputs, Badges)
 │   │   ├── molecules/            # Compound Controls (SearchBar, Modal, Tabs)
 │   │   └── organisms/            # Feature Views (BranchGraph, DiffViewer, Settings)
+│   ├── styles/                   # Atomic Tailwind CSS v4 Stylesheets (`atoms`, `molecules`, `organisms`)
 │   ├── App.vue                   # Application Entry Shell
 │   └── main.ts                   # Vue Application Bootstrap
 │

@@ -1,41 +1,26 @@
-/* BaseBadge.css */
+@reference "../../assets/main.css";
+
+/* BaseBadge.css - Tailwind CSS v4 */
 .badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 7px;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 600;
-  user-select: none;
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold select-none;
 }
 
 .badge-branch {
-  background: rgba(0, 210, 211, 0.18);
-  color: #00d2d3;
-  border: 1px solid rgba(0, 210, 211, 0.4);
+  @apply bg-[#00d2d3]/20 text-[#00d2d3] border border-[#00d2d3]/40;
 }
 
 .badge-staged {
-  background: rgba(46, 213, 115, 0.18);
-  color: #2ed573;
-  border: 1px solid rgba(46, 213, 115, 0.4);
+  @apply bg-[#2ed573]/20 text-[#2ed573] border border-[#2ed573]/40;
 }
 
 .badge-modified {
-  background: rgba(255, 165, 2, 0.18);
-  color: #ffa502;
-  border: 1px solid rgba(255, 165, 2, 0.4);
+  @apply bg-[#ffa502]/20 text-[#ffa502] border border-[#ffa502]/40;
 }
 
 .badge-danger {
-  background: rgba(255, 71, 87, 0.18);
-  color: #ff4757;
-  border: 1px solid rgba(255, 71, 87, 0.4);
+  @apply bg-[#ff4757]/20 text-[#ff4757] border border-[#ff4757]/40;
 }
 
 .badge-purple {
-  background: rgba(156, 136, 255, 0.18);
-  color: #9c88ff;
-  border: 1px solid rgba(156, 136, 255, 0.4);
+  @apply bg-[#9c88ff]/20 text-[#9c88ff] border border-[#9c88ff]/40;
 }

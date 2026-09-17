@@ -1,29 +1,14 @@
-/* SearchBox.css */
+@reference "../../assets/main.css";
+
+/* SearchBox.css - Tailwind CSS v4 */
 .search-box-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
+  @apply relative flex items-center w-full;
 }
 
 .search-box-input {
-  width: 100%;
-  font-size: 11px;
-  padding: 4px 24px 4px 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  color: var(--text-main);
-  outline: none;
-}
-
-.search-box-input:focus {
-  border-color: var(--primary);
+  @apply w-full text-[11px] py-1 pl-2 pr-6 bg-black/30 border border-white/10 rounded text-[#e6e6e6] outline-none focus:border-[#00d2d3];
 }
 
 .search-box-icon {
-  position: absolute;
-  right: 8px;
-  color: var(--text-dim);
-  pointer-events: none;
+  @apply absolute right-2 text-[#5c6370] pointer-events-none;
 }

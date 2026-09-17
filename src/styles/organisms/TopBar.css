@@ -1,443 +1,209 @@
-/* TopBar.css */
+@reference "../../assets/main.css";
+
+/* TopBar.css - Tailwind CSS v4 */
 .topbar-container {
-  display: flex;
-  flex-direction: column;
-  background: #181a1f;
-  border-bottom: 1px solid var(--border-color);
-  user-select: none;
-  position: relative;
+  @apply flex flex-col bg-[#181a1f] border-b border-white/10 select-none relative;
 }
 
 .native-menu-bar {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  height: 26px;
-  padding: 0 10px;
-  background: #121417;
-  font-size: 11px;
-  color: var(--text-muted);
+  @apply flex items-center gap-3.5 h-[26px] px-2.5 bg-[#121417] text-[11px] text-[#9da5b4];
 }
 
 .menu-brand {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-right: 6px;
+  @apply flex items-center gap-1.5 mr-1.5;
 }
 
 .menu-logo-img {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
+  @apply w-4 h-4 rounded;
 }
 
 .menu-app-name {
-  font-weight: 700;
-  color: var(--text-main);
-  font-size: 11px;
-  letter-spacing: 0.3px;
+  @apply font-bold text-[#e6e6e6] text-[11px] tracking-wide;
 }
 
 .menu-item {
-  cursor: pointer;
-}
-.menu-item:hover {
-  color: var(--text-main);
+  @apply cursor-pointer hover:text-[#e6e6e6];
 }
 
 .menu-spacer {
-  flex: 1;
+  @apply flex-1;
 }
 
 .ai-status-pill {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  color: #9c88ff;
-  background: rgba(156, 136, 255, 0.15);
-  border: 1px solid rgba(156, 136, 255, 0.3);
-  padding: 2px 7px;
-  border-radius: 10px;
-  cursor: pointer;
+  @apply flex items-center gap-1 text-[10px] font-semibold text-[#9c88ff] bg-[#9c88ff]/15 border border-[#9c88ff]/30 px-1.75 py-0.5 rounded-full cursor-pointer;
 }
 
 /* ── Git Account Switcher in TopBar ─────────────────────────────── */
 .account-selector-wrap {
-  position: relative;
+  @apply relative;
 }
 
 .account-pill-trigger {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
+  @apply flex items-center gap-1 cursor-pointer;
 }
 
 .account-pill-trigger .chevron-icon {
-  color: var(--text-dim);
-  transition: transform 0.2s;
+  @apply text-[#5c6370] transition-transform duration-200;
 }
 
 .account-dropdown-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 6px;
-  width: 260px;
-  background: #181a1f;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-  display: flex;
-  flex-direction: column;
-  padding: 6px;
-  z-index: 1000;
+  @apply absolute top-full right-0 mt-1.5 w-[260px] bg-[#181a1f] border border-white/10 rounded-lg shadow-[0_10px_30px_rgba(0,0,0,0.7)] flex flex-col p-1.5 z-[1000];
 }
 
 .dropdown-title-row {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--text-dim);
-  letter-spacing: 0.5px;
-  padding: 6px 8px 4px 8px;
+  @apply text-[9px] font-bold text-[#5c6370] tracking-wider pt-1.5 px-2 pb-1;
 }
 
 .dropdown-account-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.dropdown-account-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  @apply flex justify-between items-center px-2 py-1.5 rounded-md cursor-pointer transition-colors duration-150 hover:bg-white/10;
 }
 
 .dropdown-account-item.active {
-  background: rgba(99, 102, 241, 0.15);
+  @apply bg-[#6366f1]/15;
 }
 
 .dropdown-footer-action {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px;
-  font-size: 11px;
-  color: var(--primary);
-  border-top: 1px solid var(--border-color);
-  margin-top: 4px;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.dropdown-footer-action:hover {
-  background: rgba(0, 210, 211, 0.1);
+  @apply flex items-center gap-1.5 p-2 text-[11px] text-[#00d2d3] border-t border-white/10 mt-1 cursor-pointer rounded hover:bg-[#00d2d3]/10;
 }
 
 .no-account-pill {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px dashed var(--border-color);
-  padding: 2px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.no-account-pill:hover {
-  color: var(--text-main);
-  border-color: var(--primary);
+  @apply flex items-center gap-1 text-[11px] text-[#9da5b4] bg-white/5 border border-dashed border-white/10 px-2 py-0.5 rounded-md cursor-pointer transition-all duration-150 hover:text-[#e6e6e6] hover:border-[#00d2d3];
 }
 
 .toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 38px;
-  padding: 0 12px;
-  background: #1c2026;
-  border-bottom: 1px solid var(--border-color);
+  @apply flex items-center justify-between h-[38px] px-3 bg-[#1c2026] border-b border-white/10;
 }
 
 .repo-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
+  @apply flex items-center gap-1 text-[11px];
 }
 
 .repo-breadcrumb .label {
-  color: var(--text-dim);
-  font-size: 10px;
+  @apply text-[#5c6370] text-[10px];
 }
 
 .repo-breadcrumb .value {
-  font-weight: 600;
-  color: var(--text-main);
+  @apply font-semibold text-[#e6e6e6];
 }
 
 .repo-breadcrumb .value-branch {
-  font-weight: 600;
-  color: var(--primary);
+  @apply font-semibold text-[#00d2d3];
 }
 
 .repo-breadcrumb .sep {
-  color: var(--text-dim);
+  @apply text-[#5c6370];
 }
 
 .close-repo-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 3px;
-  display: flex;
-  align-items: center;
-  margin-left: 4px;
-  transition: all 0.15s ease;
-}
-
-.close-repo-btn:hover {
-  background: rgba(255, 71, 87, 0.2);
-  color: var(--danger);
+  @apply bg-transparent border-0 text-[#5c6370] cursor-pointer px-1 py-0.5 rounded flex items-center ml-1 transition-all duration-150 ease-in-out hover:bg-[#ff4757]/20 hover:text-[#ff4757];
 }
 
 .toolbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 3px;
+  @apply flex items-center gap-1;
 }
 
 .has-tooltip {
-  position: relative;
-  display: inline-flex;
+  @apply relative inline-flex;
 }
 
 .has-tooltip .tooltip-box {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 6px;
-  background: #121417;
-  color: var(--text-main);
-  border: 1px solid var(--primary);
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 10px;
-  font-weight: 500;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
-  z-index: 1000;
+  @apply absolute top-full left-1/2 -translate-x-1/2 mt-1.5 bg-[#121417] text-[#e6e6e6] border border-[#00d2d3] rounded px-2 py-1 text-[10px] font-medium whitespace-nowrap pointer-events-none opacity-0 invisible shadow-[0_4px_15px_rgba(0,0,0,0.7)] z-[1000];
 }
 
 .has-tooltip:hover .tooltip-box {
-  opacity: 1;
-  visibility: visible;
+  @apply opacity-100 visible;
 }
 
 .tool-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.tool-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-main);
+  @apply flex items-center gap-1 bg-transparent border-0 text-[#9da5b4] text-[11px] px-2 py-1 rounded cursor-pointer transition-colors duration-150 hover:bg-white/10 hover:text-[#e6e6e6];
 }
 
 .active-term {
-  color: var(--primary);
-}
-.active-term:hover {
-  background: rgba(0, 210, 211, 0.15);
+  @apply text-[#00d2d3] hover:bg-[#00d2d3]/15;
 }
 
 .v-divider {
-  width: 1px;
-  height: 14px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 0 3px;
+  @apply w-[1px] h-3.5 bg-white/10 mx-1;
 }
 
 .toolbar-search {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-color);
-  padding: 4px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.toolbar-search:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--primary);
+  @apply flex items-center gap-1.5 bg-white/5 border border-white/10 px-2.5 py-1 rounded cursor-pointer transition-all duration-150 ease-in-out hover:bg-white/10 hover:border-[#00d2d3];
 }
 
 .search-btn-label {
-  font-size: 11px;
-  color: var(--text-dim);
+  @apply text-[11px] text-[#5c6370];
 }
 
 .search-icon {
-  color: var(--text-dim);
+  @apply text-[#5c6370];
 }
 
 .icon-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 3px;
-}
-.icon-btn:hover {
-  color: var(--text-main);
+  @apply bg-transparent border-0 text-[#9da5b4] cursor-pointer p-1 hover:text-[#e6e6e6];
 }
 
 .repo-search-modal {
-  width: 520px;
+  @apply w-[520px];
 }
 
 .desc {
-  font-size: 12px;
-  color: var(--text-muted);
+  @apply text-[12px] text-[#9da5b4];
 }
 
 .branch-name-input {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  width: 100%;
+  @apply font-mono text-[12px] w-full;
 }
 
 .modal-search-box {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--bg-main);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 6px 12px;
-}
-
-.modal-search-box:focus-within {
-  border-color: var(--primary);
+  @apply flex items-center gap-2 bg-[#181a1f] border border-white/10 rounded-md px-3 py-1.5 focus-within:border-[#00d2d3];
 }
 
 .search-box-icon {
-  color: var(--text-dim);
+  @apply text-[#5c6370];
 }
 
 .repo-path-input {
-  background: transparent;
-  border: none;
-  color: var(--text-main);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  width: 100%;
-  outline: none;
+  @apply bg-transparent border-0 text-[#e6e6e6] font-mono text-[12px] w-full outline-none;
 }
 
 .recent-repos-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 6px;
+  @apply flex flex-col gap-2 mt-1.5;
 }
 
 .section-title {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  letter-spacing: 0.5px;
+  @apply text-[10px] font-bold uppercase text-[#5c6370] tracking-wider;
 }
 
 .repo-results-list {
-  max-height: 220px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  @apply max-h-[220px] overflow-y-auto flex flex-col gap-1;
 }
 
 .repo-result-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.repo-result-item:hover {
-  background: rgba(0, 210, 211, 0.1);
-  border-color: var(--primary);
+  @apply flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-white/5 border border-transparent cursor-pointer transition-all duration-150 ease-in-out hover:bg-[#00d2d3]/10 hover:border-[#00d2d3];
 }
 
 .repo-result-item.active {
-  background: rgba(0, 210, 211, 0.15);
-  border-color: var(--primary);
+  @apply bg-[#00d2d3]/15 border-[#00d2d3];
 }
 
 .repo-item-icon {
-  color: var(--primary);
+  @apply text-[#00d2d3];
 }
 
 .repo-item-info {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  @apply flex flex-col overflow-hidden;
 }
 
 .repo-item-name {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-main);
+  @apply text-[12px] font-semibold text-[#e6e6e6];
 }
 
 .repo-item-path {
-  font-size: 10px;
-  color: var(--text-dim);
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
+  @apply text-[10px] text-[#5c6370] text-ellipsis overflow-hidden whitespace-nowrap;
 }
 
 .empty-recent {
-  font-size: 11px;
-  color: var(--text-dim);
-  font-style: italic;
-  padding: 12px 0;
-  text-align: center;
+  @apply text-[11px] text-[#5c6370] italic py-3 text-center;
 }
 
 .spinning { animation: spin 1s linear infinite; }

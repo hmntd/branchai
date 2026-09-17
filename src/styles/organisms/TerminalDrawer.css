@@ -1,87 +1,42 @@
-/* TerminalDrawer.css */
+@reference "../../assets/main.css";
+
+/* TerminalDrawer.css - Tailwind CSS v4 */
 .terminal-drawer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 200px;
-  background: #0e1117;
-  border-top: 1px solid var(--border-color);
-  border-radius: 0;
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
+  @apply absolute bottom-0 left-0 right-0 h-[200px] bg-[#0e1117] border-t border-white/8 rounded-none z-[100] flex flex-col;
 }
 
 .terminal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 12px;
-  background: #181a1f;
-  border-bottom: 1px solid var(--border-color);
-  font-size: 11px;
-  font-weight: 600;
+  @apply flex justify-between items-center px-3 py-1.5 bg-[#181a1f] border-b border-white/8 text-[11px] font-semibold;
 }
 
 .header-left, .header-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  @apply flex items-center gap-2;
 }
 
 .terminal-body {
-  flex: 1;
-  padding: 10px;
-  overflow-y: auto;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  @apply flex-1 p-2.5 overflow-y-auto font-mono text-[11px] flex flex-col gap-1;
 }
 
 .log-line pre {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-all;
+  @apply m-0 whitespace-pre-wrap break-all;
 }
 
 .log-line.input {
-  color: var(--primary);
-  font-weight: 600;
+  @apply text-[#00d2d3] font-semibold;
 }
 
 .log-line.output {
-  color: var(--text-muted);
+  @apply text-[#9da5b4];
 }
 
 .command-form {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 4px;
+  @apply flex items-center gap-1.5 mt-1;
 }
 
 .terminal-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-main);
-}
-.terminal-input:focus {
-  box-shadow: none;
+  @apply flex-1 bg-transparent border-0 font-mono text-[11px] text-[#e6e6e6] focus:shadow-none;
 }
 
 .icon-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 2px;
-}
-.icon-btn:hover {
-  color: var(--text-main);
+  @apply bg-transparent border-0 text-[#9da5b4] cursor-pointer p-0.5 hover:text-[#e6e6e6];
 }

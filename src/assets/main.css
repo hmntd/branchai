@@ -1,4 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-bg-dark: #181a1f;
+  --color-bg-sidebar: #1e222b;
+  --color-bg-panel: #21252b;
+  --color-bg-card-hover: #282c34;
+  --color-border-color: rgba(255, 255, 255, 0.08);
+  --color-border-active: #00d2d3;
+
+  --color-primary: #00d2d3;
+  --color-primary-glow: rgba(0, 210, 211, 0.25);
+  --color-secondary: #70a1ff;
+  --color-purple-ai: #9c88ff;
+  --color-purple-ai-glow: rgba(156, 136, 255, 0.35);
+  --color-success: #2ed573;
+  --color-warning: #ffa502;
+  --color-danger: #ff4757;
+
+  --color-text-main: #e6e6e6;
+  --color-text-muted: #9da5b4;
+  --color-text-dim: #5c6370;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Fira Code', monospace;
+}
 
 :root {
   --bg-dark: #181a1f;
@@ -7,7 +32,7 @@
   --bg-card-hover: #282c34;
   --border-color: rgba(255, 255, 255, 0.08);
   --border-active: #00d2d3;
-  
+
   --primary: #00d2d3;
   --primary-glow: rgba(0, 210, 211, 0.25);
   --secondary: #70a1ff;
@@ -16,7 +41,7 @@
   --success: #2ed573;
   --warning: #ffa502;
   --danger: #ff4757;
-  
+
   --text-main: #e6e6e6;
   --text-muted: #9da5b4;
   --text-dim: #5c6370;
@@ -60,16 +85,13 @@ body {
 
 /* Glassmorphism / Dark Panels */
 .gk-panel {
-  background: var(--bg-panel);
+  @apply bg-[#21252b] rounded-[6px];
   border: 1px solid var(--border-color);
-  border-radius: 6px;
 }
 
 .gk-card {
-  background: rgba(255, 255, 255, 0.03);
+  @apply bg-white/3 rounded-[6px] transition-all duration-200 ease-in-out;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
-  transition: all 0.2s ease;
 }
 
 .gk-card:hover {
@@ -117,108 +139,54 @@ input:focus, textarea:focus, select:focus {
 
 /* Buttons */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
+  @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[12px] font-medium cursor-pointer border border-transparent transition-all duration-200 ease-in-out;
 }
 
 .btn-primary {
-  background: var(--success);
-  color: #0d1117;
-  font-weight: 600;
-}
-.btn-primary:hover {
-  background: #26af5f;
-  box-shadow: 0 2px 10px rgba(46, 213, 115, 0.3);
+  @apply bg-[#2ed573] text-[#0d1117] font-semibold hover:bg-[#26af5f] hover:shadow-[0_2px_10px_rgba(46,213,115,0.3)];
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-main);
-  border: 1px solid var(--border-color);
-}
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.15);
+  @apply bg-white/8 text-[#e6e6e6] border border-white/8 hover:bg-white/15;
 }
 .btn-secondary.active {
-  background: rgba(99, 102, 241, 0.22);
-  border-color: rgba(99, 102, 241, 0.6);
-  color: #a5b4fc;
+  @apply bg-[#6366f1]/22 border-[#6366f1]/60 text-[#a5b4fc];
 }
 
 .btn-ai {
   background: linear-gradient(135deg, #8c7ae6 0%, #6c5ce7 100%);
-  color: #ffffff;
-  font-weight: 600;
-  box-shadow: 0 2px 12px rgba(140, 122, 230, 0.4);
+  @apply text-white font-semibold shadow-[0_2px_12px_rgba(140,122,230,0.4)] hover:shadow-[0_4px_18px_rgba(156,136,255,0.5)];
 }
 .btn-ai:hover {
   background: linear-gradient(135deg, #9c88ff 0%, #7d5fff 100%);
-  box-shadow: 0 4px 18px rgba(156, 136, 255, 0.5);
 }
 
 /* Badges */
 .badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 7px;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 600;
+  @apply inline-flex items-center gap-1 px-1.75 py-0.5 rounded-full text-[11px] font-semibold;
 }
 .badge-branch {
-  background: rgba(0, 210, 211, 0.18);
-  color: #00d2d3;
-  border: 1px solid rgba(0, 210, 211, 0.4);
+  @apply bg-[#00d2d3]/18 text-[#00d2d3] border border-[#00d2d3]/40;
 }
 .badge-staged {
-  background: rgba(46, 213, 115, 0.18);
-  color: #2ed573;
-  border: 1px solid rgba(46, 213, 115, 0.4);
+  @apply bg-[#2ed573]/18 text-[#2ed573] border border-[#2ed573]/40;
 }
 .badge-modified {
-  background: rgba(255, 165, 2, 0.18);
-  color: #ffa502;
-  border: 1px solid rgba(255, 165, 2, 0.4);
+  @apply bg-[#ffa502]/18 text-[#ffa502] border border-[#ffa502]/40;
 }
 
 /* Diff formatting */
 .diff-view {
   font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.5;
+  @apply text-[12px] leading-normal;
 }
 
 .diff-line {
-  display: flex;
-  align-items: stretch;
-  min-height: 20px;
-  white-space: pre;
-}
-
-.diff-line:hover {
-  filter: brightness(1.15);
+  @apply flex items-stretch min-h-[20px] whitespace-pre hover:brightness-115;
 }
 
 .diff-gutter {
-  flex-shrink: 0;
-  width: 42px;
-  padding: 0 6px;
-  text-align: right;
-  font-size: 11px;
-  line-height: 20px;
-  color: rgba(255, 255, 255, 0.2);
-  background: rgba(0, 0, 0, 0.25);
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-  user-select: none;
+  @apply shrink-0 w-[42px] px-1.5 text-right text-[11px] leading-[20px] text-white/20 bg-black/25 border-r border-white/6 select-none;
 }
 
 .diff-gutter-old {
@@ -226,72 +194,51 @@ input:focus, textarea:focus, select:focus {
 }
 
 .diff-sign {
-  flex-shrink: 0;
-  width: 16px;
-  text-align: center;
-  line-height: 20px;
-  font-weight: 700;
-  font-size: 12px;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  @apply shrink-0 w-4 text-center leading-[20px] font-bold text-[12px] border-r border-white/6;
 }
 
 .diff-content {
-  flex: 1;
-  padding: 0 8px;
-  line-height: 20px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  word-break: break-all;
-  white-space: pre-wrap;
+  @apply flex-1 px-2 leading-[20px] overflow-hidden text-ellipsis break-all whitespace-pre-wrap;
 }
 
 .diff-add {
-  background-color: rgba(46, 213, 115, 0.1);
+  @apply bg-[#2ed573]/10;
 }
 .diff-add .diff-gutter {
-  background: rgba(46, 213, 115, 0.08);
-  color: rgba(46, 213, 115, 0.5);
+  @apply bg-[#2ed573]/8 text-[#2ed573]/50;
 }
-.diff-add .diff-sign {
-  color: #2ed573;
-}
+.diff-add .diff-sign,
 .diff-add .diff-content {
-  color: #2ed573;
+  @apply text-[#2ed573];
 }
 
 .diff-remove {
-  background-color: rgba(255, 71, 87, 0.1);
+  @apply bg-[#ff4757]/10;
 }
 .diff-remove .diff-gutter {
-  background: rgba(255, 71, 87, 0.08);
-  color: rgba(255, 71, 87, 0.5);
+  @apply bg-[#ff4757]/8 text-[#ff4757]/50;
 }
-.diff-remove .diff-sign {
-  color: #ff4757;
-}
+.diff-remove .diff-sign,
 .diff-remove .diff-content {
-  color: #ff4757;
+  @apply text-[#ff4757];
 }
 
 .diff-hunk {
-  background: rgba(112, 161, 255, 0.08);
+  @apply bg-[#70a1ff]/8;
 }
 .diff-hunk .diff-content {
-  color: #70a1ff;
-  font-weight: 600;
-  font-style: italic;
+  @apply text-[#70a1ff] font-semibold italic;
 }
 .diff-hunk .diff-gutter,
 .diff-hunk .diff-sign {
-  background: rgba(112, 161, 255, 0.06);
+  @apply bg-[#70a1ff]/6;
 }
 
 .diff-meta .diff-content {
-  color: rgba(255, 255, 255, 0.25);
-  font-style: italic;
+  @apply text-white/25 italic;
 }
 
 /* context lines */
 .diff-line:not(.diff-add):not(.diff-remove):not(.diff-hunk):not(.diff-meta) .diff-content {
-  color: rgba(255, 255, 255, 0.7);
+  @apply text-white/70;
 }

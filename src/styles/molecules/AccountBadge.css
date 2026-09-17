@@ -1,102 +1,50 @@
-/* AccountBadge.css */
+@reference "../../assets/main.css";
+
+/* AccountBadge.css - Tailwind CSS v4 */
 .account-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-color);
-  font-size: 11px;
-  user-select: none;
-  transition: all 0.2s;
+  @apply flex items-center gap-2 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[11px] select-none transition-all duration-200;
 }
 
 .account-badge.interactive {
-  cursor: pointer;
-}
-
-.account-badge.interactive:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
+  @apply cursor-pointer hover:bg-white/10 hover:border-white/20;
 }
 
 .avatar-circle {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-  color: #ffffff;
-  font-size: 9px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  overflow: hidden;
+  @apply w-[22px] h-[22px] rounded-full bg-gradient-to-br from-[#6366f1] to-[#a855f7] text-white text-[9px] font-bold flex items-center justify-center shrink-0 overflow-hidden;
 }
 
 .avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  @apply w-full h-full object-cover;
 }
 
 .account-details {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
+  @apply flex flex-col leading-tight;
 }
 
 .account-name-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  @apply flex items-center gap-1;
 }
 
 .account-username {
-  font-weight: 600;
-  color: var(--text-main);
-  max-width: 120px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  @apply font-semibold text-[#e6e6e6] max-w-[120px] whitespace-nowrap overflow-hidden text-ellipsis;
 }
 
 .account-email {
-  font-size: 10px;
-  color: var(--text-muted);
-  max-width: 140px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  @apply text-[10px] text-[#9da5b4] max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis;
 }
 
 .provider-pill {
-  font-size: 9px;
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-weight: 700;
-  text-transform: uppercase;
-  background: rgba(99, 102, 241, 0.15);
-  color: #818cf8;
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  @apply text-[9px] px-1 py-0.5 rounded-[3px] font-bold uppercase bg-[#6366f1]/15 text-[#818cf8] border border-[#6366f1]/30;
 }
 
 .provider-pill.github {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f0f6fc;
-  border-color: rgba(255, 255, 255, 0.2);
+  @apply bg-white/10 text-[#f0f6fc] border-white/20;
 }
 
 .provider-pill.gitlab {
-  background: rgba(252, 109, 38, 0.15);
-  color: #fc6d26;
-  border-color: rgba(252, 109, 38, 0.3);
+  @apply bg-[#fc6d26]/15 text-[#fc6d26] border-[#fc6d26]/30;
 }
 
 .provider-pill.bitbucket {
-  background: rgba(0, 82, 204, 0.15);
-  color: #2684ff;
-  border-color: rgba(0, 82, 204, 0.3);
+  @apply bg-[#0052cc]/15 text-[#2684ff] border-[#0052cc]/30;
 }
