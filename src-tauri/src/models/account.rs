@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct GitAccount {
     pub id: String,
     pub name: String,
@@ -17,7 +17,7 @@ pub struct GitAccount {
     pub personal_access_token: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct AppConfig {
     pub openai_key: String,
     pub claude_key: String,

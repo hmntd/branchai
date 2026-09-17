@@ -36,7 +36,9 @@ pub fn checkout_branch(repo_path: String, branch_name: String) -> Result<(), Str
         .revparse_ext(&branch_name)
         .map_err(|e| e.message().to_string())?;
 
-    repo.checkout_tree(&object, None)
+    let mut opts = git2::build::CheckoutBuilder::new();
+    opts.safe();
+    repo.checkout_tree(&object, Some(&mut opts))
         .map_err(|e| e.message().to_string())?;
 
     if let Some(r) = reference {

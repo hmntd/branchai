@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct CommitInfo {
     pub id: String,
     pub author: String,
@@ -10,7 +10,7 @@ pub struct CommitInfo {
     pub parents: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct GraphNode {
     pub id: String,
     pub short_id: String,

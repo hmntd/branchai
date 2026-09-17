@@ -41,6 +41,7 @@ pub fn create_commit(repo_path: String, message: String) -> Result<String, Strin
     let repo = open_repo(&repo_path)?;
     let mut index = repo.index().map_err(|e| e.message().to_string())?;
     let tree_id = index.write_tree().map_err(|e| e.message().to_string())?;
+    index.write().map_err(|e| e.message().to_string())?;
     let tree = repo.find_tree(tree_id).map_err(|e| e.message().to_string())?;
 
     let signature = repo.signature().unwrap_or_else(|_| {
