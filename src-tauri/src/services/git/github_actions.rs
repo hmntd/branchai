@@ -405,3 +405,102 @@ pub async fn trigger_workflow_dispatch(
         ))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use git2::Repository;
+    use tempfile::TempDir;
+
+    #[test]
+    fn test_dto_serialization_deserialization() {
+        let step = GithubStep {
+            name: "Build binaries".to_string(),
+            status: "completed".to_string(),
+            conclusion: Some("success".to_string()),
+            number: 1,
+            started_at: Some("2026-09-18T10:00:00Z".to_string()),
+            completed_at: Some("2026-09-18T10:01:00Z".to_string()),
+        };
+
+        let job = GithubJob {
+            id: 101,
+            run_id: 202,
+            name: "CI Job".to_string(),
+            status: "completed".to_string(),
+            conclusion: Some("success".to_string()),
+            started_at: Some("2026-09-18T10:00:00Z".to_string()),
+            completed_at: Some("2026-09-18T10:01:00Z".to_string()),
+            steps: vec![step],
+        };
+
+        let json = serde_json::to_string(&job).unwrap();
+        assert!(json.contains("CI Job"));
+        assert!(json.contains("Build binaries"));
+
+        let deserialized: GithubJob = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.id, 101);
+        assert_eq!(deserialized.steps.len(), 1);
+
+        let run = GithubWorkflowRun {
+            id: 505,
+            name: Some("Deploy Action".to_string()),
+            head_branch: Some("main".to_string()),
+            head_sha: Some("abc1234".to_string()),
+            event: "push".to_string(),
+            status: "completed".to_string(),
+            conclusion: Some("success".to_string()),
+            html_url: "https://github.com/owner/repo/actions/runs/505".to_string(),
+            created_at: "2026-09-18T10:00:00Z".to_string(),
+            updated_at: "2026-09-18T10:02:00Z".to_string(),
+            run_number: 12,
+            actor_login: Some("octocat".to_string()),
+            actor_avatar_url: Some("https://github.com/images/octocat.png".to_string()),
+        };
+
+        let run_json = serde_json::to_string(&run).unwrap();
+        assert!(run_json.contains("Deploy Action"));
+        assert!(run_json.contains("octocat"));
+    }
+
+    #[test]
+    fn test_workflow_dispatch_request_payload() {
+        let mut inputs = HashMap::new();
+        inputs.insert("environment".to_string(), "staging".to_string());
+
+        let req = WorkflowDispatchRequest {
+            ref_name: "feature/actions".to_string(),
+            inputs: Some(inputs),
+        };
+
+        let json = serde_json::to_string(&req).unwrap();
+        assert!(json.contains("\"ref\":\"feature/actions\""));
+        assert!(json.contains("\"environment\":\"staging\""));
+    }
+
+    #[test]
+    fn test_resolve_repo_context_error_on_repo_without_remote() {
+        let temp_dir = TempDir::new().unwrap();
+        let repo_path = temp_dir.path().to_str().unwrap();
+        Repository::init(repo_path).unwrap();
+
+        let result = resolve_repo_context(repo_path);
+        assert!(result.is_err());
+        let err = result.err().unwrap();
+        assert!(err.contains("Could not identify repository owner"));
+    }
+
+    #[test]
+    fn test_resolve_repo_context_with_github_remote() {
+        let temp_dir = TempDir::new().unwrap();
+        let repo_path = temp_dir.path().to_str().unwrap();
+        let repo = Repository::init(repo_path).unwrap();
+
+        repo.remote("origin", "https://github.com/branchai-org/branchai-app.git")
+            .unwrap();
+
+        let ctx = resolve_repo_context(repo_path).unwrap();
+        assert_eq!(ctx.owner, "branchai-org");
+        assert_eq!(ctx.repo_name, "branchai-app");
+    }
+}
