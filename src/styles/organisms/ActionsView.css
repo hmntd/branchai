@@ -1,0 +1,197 @@
+@reference "../../assets/main.css";
+
+/* ActionsView.css - Tailwind CSS v4 */
+.actions-container {
+  @apply flex flex-col h-full bg-[#0d111a] overflow-hidden select-none;
+}
+
+.actions-toolbar {
+  @apply flex justify-between items-center px-4 py-2.5 bg-[#131823] border-b border-white/8 shrink-0;
+}
+
+.toolbar-left,
+.toolbar-right {
+  @apply flex items-center gap-2;
+}
+
+.toolbar-title {
+  @apply flex items-center gap-2 text-[14px] font-semibold text-white/90;
+}
+
+.icon-purple {
+  @apply text-[#a855f7];
+}
+
+.icon-muted {
+  @apply text-[#9da5b4];
+}
+
+.select-sm {
+  @apply bg-black/40 border border-white/10 text-white/85 text-[11px] rounded px-2.5 py-1 focus:border-[#6366f1] focus:outline-none font-mono;
+}
+
+.actions-body {
+  @apply grid grid-cols-[340px_1fr] flex-1 overflow-hidden;
+}
+
+.runs-sidebar {
+  @apply flex flex-col border-r border-white/8 bg-[#11141d] overflow-hidden;
+}
+
+.runs-filter {
+  @apply flex items-center gap-2 p-2.5 border-b border-white/8 bg-black/20;
+}
+
+.runs-list {
+  @apply flex-1 overflow-y-auto flex flex-col divide-y divide-white/5;
+}
+
+.run-card {
+  @apply p-3 flex flex-col gap-1.5 cursor-pointer transition-colors duration-150 hover:bg-white/3;
+}
+
+.run-card.active {
+  @apply bg-[#6366f1]/15 border-l-2 border-l-[#6366f1];
+}
+
+.run-card-header {
+  @apply flex justify-between items-start gap-2;
+}
+
+.run-name {
+  @apply text-[12px] font-semibold text-white/90 truncate flex-1;
+}
+
+.run-number {
+  @apply text-[10px] font-mono text-white/40 shrink-0;
+}
+
+.run-card-meta {
+  @apply flex items-center gap-2 text-[10px] text-white/50 font-mono flex-wrap;
+}
+
+.meta-item {
+  @apply flex items-center gap-1 bg-white/4 px-1.5 py-0.5 rounded;
+}
+
+.run-card-footer {
+  @apply flex justify-between items-center text-[10px] text-white/40 mt-0.5;
+}
+
+.actor-info {
+  @apply flex items-center gap-1.5;
+}
+
+.actor-avatar {
+  @apply w-3.5 h-3.5 rounded-full object-cover;
+}
+
+.actor-name {
+  @apply truncate max-w-[100px];
+}
+
+.run-detail-pane {
+  @apply flex flex-col overflow-hidden bg-[#0d111a];
+}
+
+.detail-header {
+  @apply flex justify-between items-center px-4 py-3 border-b border-white/8 bg-[#131823];
+}
+
+.detail-title {
+  @apply flex items-center gap-2 text-[13px] font-semibold text-white/90;
+}
+
+.detail-body {
+  @apply grid grid-rows-[auto_1fr] flex-1 overflow-hidden;
+}
+
+.jobs-section {
+  @apply flex flex-col p-3 border-b border-white/8 bg-[#11141d] max-h-[220px] overflow-y-auto gap-2;
+}
+
+.section-label {
+  @apply text-[10px] font-bold text-white/40 tracking-wider uppercase;
+}
+
+.jobs-grid {
+  @apply flex flex-col gap-1.5;
+}
+
+.job-item {
+  @apply flex flex-col border border-white/8 rounded-lg bg-black/30 overflow-hidden;
+}
+
+.job-header {
+  @apply flex justify-between items-center px-3 py-2 cursor-pointer hover:bg-white/4 text-[12px] font-semibold;
+}
+
+.job-title {
+  @apply flex items-center gap-2;
+}
+
+.job-steps {
+  @apply flex flex-col divide-y divide-white/5 border-t border-white/5 bg-black/40 px-3 py-1 text-[11px] font-mono;
+}
+
+.step-item {
+  @apply flex justify-between items-center py-1 text-white/70;
+}
+
+.step-name {
+  @apply flex items-center gap-2;
+}
+
+.logs-section {
+  @apply flex flex-col overflow-hidden bg-black/60 p-3;
+}
+
+.logs-header {
+  @apply flex justify-between items-center pb-2 border-b border-white/8 text-[11px] font-mono text-white/60;
+}
+
+.logs-actions {
+  @apply flex items-center gap-2;
+}
+
+.terminal-log-viewer {
+  @apply flex-1 font-mono text-[11px] leading-relaxed text-white/80 p-3 overflow-y-auto whitespace-pre-wrap select-text bg-[#090c10] rounded-lg border border-white/5 mt-2;
+}
+
+.badge-status {
+  @apply flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold capitalize shrink-0;
+}
+
+.badge-success {
+  @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/30;
+}
+
+.badge-failure {
+  @apply bg-red-500/15 text-red-400 border border-red-500/30;
+}
+
+.badge-progress {
+  @apply bg-sky-500/15 text-sky-400 border border-sky-500/30;
+}
+
+.badge-queued {
+  @apply bg-amber-500/15 text-amber-400 border border-amber-500/30;
+}
+
+.badge-cancelled {
+  @apply bg-white/10 text-white/50 border border-white/15;
+}
+
+.empty-state {
+  @apply flex flex-col items-center justify-center p-8 gap-3 text-white/40 text-center text-[12px] h-full;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}

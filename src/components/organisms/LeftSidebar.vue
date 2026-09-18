@@ -14,6 +14,7 @@ import {
   AlertCircle,
   FolderPlus,
   FolderMinus,
+  Play,
 } from '@lucide/vue';
 import SearchBox from '../molecules/SearchBox.vue';
 import RepoTag from '../molecules/RepoTag.vue';
@@ -184,6 +185,14 @@ function selectRepo(path: string) {
           <AlertCircle :size="12" :class="activeTab === 'issues' ? 'icon-warning' : 'icon-muted'" />
           <span class="group-title">ISSUES</span>
           <span class="count-pill warning">{{ issueCount }}</span>
+        </div>
+      </div>
+
+      <!-- GITHUB ACTIONS -->
+      <div class="tree-group">
+        <div class="group-header" :class="{ active: activeTab === 'actions' }" @click="emit('selectTab', 'actions')">
+          <Play :size="12" :class="activeTab === 'actions' ? 'icon-purple' : 'icon-muted'" />
+          <span class="group-title">GITHUB ACTIONS</span>
         </div>
       </div>
 

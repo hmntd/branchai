@@ -9,12 +9,13 @@ import AiCodeReview from './components/organisms/AiCodeReview.vue';
 import ConflictResolver from './components/organisms/ConflictResolver.vue';
 import PullRequestsView from './components/organisms/PullRequestsView.vue';
 import IssuesView from './components/organisms/IssuesView.vue';
+import ActionsView from './components/organisms/ActionsView.vue';
 import SettingsModal, { AppConfig } from './components/organisms/SettingsModal.vue';
 import TerminalDrawer from './components/organisms/TerminalDrawer.vue';
 import WelcomeScreen from './components/organisms/WelcomeScreen.vue';
 import { GitAccount } from './types/account';
 
-type Tab = 'graph' | 'review' | 'conflicts' | 'pull_requests' | 'issues';
+type Tab = 'graph' | 'review' | 'conflicts' | 'pull_requests' | 'issues' | 'actions';
 
 const activeTab = ref<Tab>('graph');
 const repoPath = ref<string>('');
@@ -270,6 +271,8 @@ onMounted(async () => {
           <PullRequestsView v-else-if="activeTab === 'pull_requests'" :repo-path="repoPath" :branches="branches"
             :current-branch="currentBranch" @refresh="refreshRepo" @close="activeTab = 'graph'" />
           <IssuesView v-else-if="activeTab === 'issues'" :repo-path="repoPath" @close="activeTab = 'graph'" />
+          <ActionsView v-else-if="activeTab === 'actions'" :repo-path="repoPath" :current-branch="currentBranch"
+            @close="activeTab = 'graph'" />
 
           <!-- Embedded Terminal Drawer -->
           <TerminalDrawer v-if="showTerminal" :repo-path="repoPath" @close="showTerminal = false" />

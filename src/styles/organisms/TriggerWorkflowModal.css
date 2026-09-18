@@ -1,0 +1,79 @@
+@reference "../../assets/main.css";
+
+/* TriggerWorkflowModal.css - Tailwind CSS v4 */
+.modal-backdrop {
+  @apply fixed inset-0 bg-black/75 backdrop-blur-xs z-[10000] flex items-center justify-center p-4;
+}
+
+.modal-card {
+  @apply w-[520px] max-w-full bg-[#161a23] border border-white/10 rounded-xl shadow-2xl flex flex-col overflow-hidden;
+}
+
+.modal-header {
+  @apply flex justify-between items-center px-4 py-3 border-b border-white/8 bg-black/20;
+}
+
+.header-title {
+  @apply flex items-center gap-2 font-semibold text-[13px] text-white/90;
+}
+
+.close-btn {
+  @apply bg-transparent border-0 text-white/45 cursor-pointer hover:text-white transition-colors;
+}
+
+.modal-body {
+  @apply flex flex-col gap-4 p-4 text-[12px];
+}
+
+.form-group {
+  @apply flex flex-col gap-1.5;
+}
+
+.form-label {
+  @apply font-semibold text-white/75 text-[11px];
+}
+
+.form-select,
+.form-input {
+  @apply bg-black/40 border border-white/10 rounded-md px-3 py-1.5 text-[12px] text-white/90 font-mono focus:border-[#6366f1] focus:outline-none;
+}
+
+.flex-between {
+  @apply flex justify-between items-center;
+}
+
+.btn-text {
+  @apply bg-transparent border-0 text-[#a855f7] cursor-pointer text-[11px] font-semibold flex items-center gap-1 hover:text-[#c084fc];
+}
+
+.inputs-list {
+  @apply flex flex-col gap-2 mt-1 max-h-[160px] overflow-y-auto;
+}
+
+.input-row {
+  @apply flex items-center gap-2;
+}
+
+.icon-del-btn {
+  @apply bg-transparent border-0 text-white/40 cursor-pointer p-1 rounded hover:text-red-400 hover:bg-red-500/10;
+}
+
+.modal-footer {
+  @apply flex justify-end items-center gap-2 px-4 py-3 border-t border-white/8 bg-black/20;
+}
+
+.alert {
+  @apply flex items-center gap-2 px-3 py-2 rounded-md text-[11px] font-medium;
+}
+
+.alert-danger {
+  @apply bg-red-500/15 border border-red-500/30 text-red-400;
+}
+
+.alert-success {
+  @apply bg-emerald-500/15 border border-emerald-500/30 text-emerald-400;
+}
+
+.icon-purple {
+  @apply text-[#a855f7];
+}
